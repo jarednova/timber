@@ -1,6 +1,6 @@
 <?php
 
-class TimberImage extends TimberPost implements TimberCoreInterface {
+class TimberImage extends TimberPost {
 
     public $_can_edit;
     public $_dimensions;

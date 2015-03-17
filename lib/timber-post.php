@@ -1,6 +1,6 @@
 <?php
 
-class TimberPost extends TimberCore implements TimberCoreInterface {
+class TimberPost extends TimberWPObject {
 
     public $ImageClass = 'TimberImage';
     public $PostClass = 'TimberPost';

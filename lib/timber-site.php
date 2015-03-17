@@ -1,6 +1,6 @@
 <?php
 
-class TimberSite extends TimberCore implements TimberCoreInterface {
+class TimberSite extends TimberCore {
 
     public $admin_email;
     public $blogname;

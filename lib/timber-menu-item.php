@@ -1,6 +1,6 @@
 <?php
 
-class TimberMenuItem extends TimberCore implements TimberCoreInterface {
+class TimberMenuItem extends TimberCore {
 
     public $children;
     public $has_child_class = false;
@@ -161,7 +161,7 @@ class TimberMenuItem extends TimberCore implements TimberCoreInterface {
     /**
      *
      * @param $key string lookup key
-     * @return mixed whatever value is storied in the database
+     * @return mixed whatever value is stored in the database
      */
     public function meta( $key ) {
         if ( is_object( $this->menu_object ) && method_exists( $this->menu_object, 'meta' ) ) {

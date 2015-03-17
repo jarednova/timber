@@ -1,6 +1,6 @@
 <?php
 
-class TimberComment extends TimberCore implements TimberCoreInterface {
+class TimberComment extends TimberWPObject {
 
     public $PostClass = 'TimberPost';
     public $object_type = 'comment';

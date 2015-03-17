@@ -1,6 +1,6 @@
 <?php
 
-class TimberTerm extends TimberCore implements TimberCoreInterface {
+class TimberTerm extends TimberWPObject {
 
     public $PostClass = 'TimberPost';
     public $TermClass = 'TimberTerm';
@@ -33,7 +33,7 @@ class TimberTerm extends TimberCore implements TimberCoreInterface {
         return $this->name;
     }
 
-    
+
 
     /* Setup
     ===================== */

@@ -11,6 +11,7 @@ interface TimberCoreInterface {
 	 */
 	public function __isset( $field );
 
-	public function meta( $key );
+    public function import( $info, $force = false );
 
+    public function get_method_values();
 }
