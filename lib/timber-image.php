@@ -76,6 +76,8 @@ class TimberImage extends TimberPost implements TimberCoreInterface {
 	 */
 	protected $_wp_attached_file;
 
+    protected static $_methods = array();
+
 	/**
 	 * Creates a new TimberImage object
 	 * @example
@@ -88,8 +90,9 @@ class TimberImage extends TimberPost implements TimberCoreInterface {
 	 * ```
 	 * @param int|string $iid
 	 */
-	public function __construct($iid) {
+	public function __construct( $iid, $context = false ) {
 		$this->init($iid);
+        $this->_init_extendable( $context );
 	}
 
 	/**

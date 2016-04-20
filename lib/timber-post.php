@@ -32,7 +32,7 @@
  *
  * @package Timber
  */
-class TimberPost extends TimberCore implements TimberCoreInterface {
+class TimberPost extends TimberExtendable implements TimberCoreInterface {
 
 	/**
 	 * @var string $ImageClass the name of the class to handle images by default
@@ -152,6 +152,11 @@ class TimberPost extends TimberCore implements TimberCoreInterface {
 	 */
 	public $slug;
 
+    /**
+     * @var array Contains the methods extended using TimberPost::extend
+     */
+    protected static $_methods = array();
+
 	/**
 	 * If you send the constructor nothing it will try to figure out the current post id based on being inside The_Loop
 	 * @example
@@ -160,10 +165,13 @@ class TimberPost extends TimberCore implements TimberCoreInterface {
 	 * $other_post = new TimberPost($random_post_id);
 	 * ```
 	 * @param mixed $pid
+	 * @param string $context
 	 */
-	public function __construct($pid = null) {
+	public function __construct( $pid = null, $context = false ) {
 		$pid = $this->determine_id( $pid );
 		$this->init($pid);
+
+        parent::__construct( $context );
 	}
 
 	/**
