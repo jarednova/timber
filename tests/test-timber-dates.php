@@ -11,12 +11,12 @@
 		}
 
 		function testTimeAgoFuture(){
-			$str = Timber\Twig::time_ago('2016-12-01 20:00:00', '2016-11-30, 20:00:00');
+			$str = Timber\TwigExtension::time_ago('2016-12-01 20:00:00', '2016-11-30, 20:00:00');
 			$this->assertEquals('1 day from now', $str);
 		}
 
 		function testTimeAgoPast(){
-			$str = Timber\Twig::time_ago('2016-11-29 20:00:00', '2016-11-30, 20:00:00');
+			$str = Timber\TwigExtension::time_ago('2016-11-29 20:00:00', '2016-11-30, 20:00:00');
 			$this->assertEquals('1 day ago', $str);
 		}
 
