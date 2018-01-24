@@ -59,13 +59,13 @@
 			$data['crop'] = 'default';
 			Timber::compile( $template, $data );
 
-			$this->tearDownCustomWPDirectoryStructure();
-
 			$exists = file_exists( $filename );
 			$this->assertTrue( $exists );
 			$resized_path = $upload_dir['path'].'/flag-'.$data['size']['width'].'x'.$data['size']['height'].'-c-'.$data['crop'].'.png';
 			$exists = file_exists( $resized_path );
 			$this->assertTrue( $exists );
+
+			$this->tearDownCustomWPDirectoryStructure();
 		}
 
 		function testLetterbox() {

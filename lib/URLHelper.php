@@ -141,7 +141,7 @@ class URLHelper {
 	 * @return string
 	 */
 	public static function get_full_path( $src ) {
-		$root = ABSPATH;
+		$root = self::get_root_dir();
 		$old_root_path = $root.$src;
 		$old_root_path = str_replace('//', '/', $old_root_path);
 		return $old_root_path;
@@ -158,7 +158,7 @@ class URLHelper {
 	public static function url_to_file_system( $url ) {
 		$url_parts = parse_url($url);
 		$url_parts['path'] = apply_filters('timber/URLHelper/url_to_file_system/path', $url_parts['path']);
-		$path = ABSPATH.$url_parts['path'];
+		$path = self::get_root_dir().$url_parts['path'];
 		$path = str_replace('//', '/', $path);
 		return $path;
 	}
@@ -183,7 +183,30 @@ class URLHelper {
 		$home_url = apply_filters('timber/URLHelper/get_content_subdir/home_url', $home_url);
 		$wp_content_path = str_replace($home_url, '', WP_CONTENT_URL);
 		return $wp_content_path;
-	} 
+	}
+
+	/**
+	 * Get the path to the root where index.php is located.
+	 * @return string (ex. /var/www/wp)
+	 */
+	public static function get_root_dir() {
+		$content_url = content_url();
+		$site_url = site_url();
+		if ( strstr($content_url, $site_url) ) {
+			return ABSPATH;
+		}
+
+		$content_subdirs = explode('/', parse_url($content_url, PHP_URL_PATH));
+		$site_subdirs = explode('/', parse_url($site_url, PHP_URL_PATH));
+		$mismatch = '';
+		foreach ($site_subdirs as $idx => $dir) {
+			if ($content_subdirs[$idx] === $dir) {
+				continue;
+			}
+			$mismatch .= '/' . $dir;
+		}
+		return substr(ABSPATH, 0, strpos(ABSPATH, $mismatch . '/')) . '/';
+	}
 
 	/**
 	 *
@@ -192,8 +215,9 @@ class URLHelper {
 	 * @return string
 	 */
 	public static function get_rel_path( $src ) {
-		if ( strstr($src, ABSPATH) ) {
-			return str_replace(ABSPATH, '', $src);
+		$root = self::get_root_dir();
+		if ( strstr($src, $root) ) {
+			return str_replace($root, '', $src);
 		}
 		//its outside the wordpress directory, alternate setups:
 		$src = str_replace(WP_CONTENT_DIR, '', $src);

@@ -118,8 +118,7 @@ class TestTimberImageResize extends Timber_UnitTestCase {
 		// However, WPML can't be installed with composer so this test mocks the WPML plugin
 
 		// WPML uses a filter to alter the home_url
-		$home_url_filter = function( $url ) { return $url.'/en'; };
-		add_filter( 'home_url', $home_url_filter, -10, 4 );
+		self::setupWPMLDirectory();
 
 		$img = 'https://raw.githubusercontent.com/timber/timber/master/tests/assets/arch-2night.jpg';
 		// test with a local and external file
@@ -130,7 +129,8 @@ class TestTimberImageResize extends Timber_UnitTestCase {
 		// make sure the image has been resized
 		$resized = TimberUrlHelper::url_to_file_system( $resized );
 		$this->assertTrue( TestTimberImage::checkSize($resized, 50, 50), 'image should be resized' );
-		
+
+		self::tearDownWPMLDirectory();
 	}
 
 	function testWPMLurlLocal() {
@@ -138,8 +138,7 @@ class TestTimberImageResize extends Timber_UnitTestCase {
 		// However, WPML can't be installed with composer so this test mocks the WPML plugin
 
 		// WPML uses a filter to alter the home_url
-		$home_url_filter = function( $url ) { return $url.'/en'; };
-		add_filter( 'home_url', $home_url_filter, -10, 4 );
+		self::setupWPMLDirectory();
 
 		// test with a local and external file
 		$img = 'arch.jpg';
@@ -152,7 +151,7 @@ class TestTimberImageResize extends Timber_UnitTestCase {
 		// make sure the image has been resized
 		$resized = TimberUrlHelper::url_to_file_system( $resized );
 		$this->assertTrue( TestTimberImage::checkSize($resized, 50, 50), 'image should be resized' );
-		
-	}
 
+		self::tearDownWPMLDirectory();
+	}
 }

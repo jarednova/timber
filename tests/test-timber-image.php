@@ -304,6 +304,7 @@ class TestTimberImage extends TimberImage_UnitTestCase {
 		$path = str_replace(ABSPATH, '/', $filename);
 		$image = new TimberImage( $path );
 		$this->assertEquals( 1500, $image->width() );
+		$this->assertEquals( $filename, $image->file_loc );
 	}
 
 	function testImagePath() {
@@ -311,6 +312,7 @@ class TestTimberImage extends TimberImage_UnitTestCase {
 		$image = new TimberImage( $filename );
 		$this->assertStringStartsWith('/wp-content', $image->path());
 		$this->assertStringEndsWith('.jpg', $image->path());
+		$this->assertEquals( $filename, $image->file_loc );
 	}
 
 	function testInitFromID() {
@@ -320,21 +322,37 @@ class TestTimberImage extends TimberImage_UnitTestCase {
 		$iid = wp_insert_attachment( $attachment, $filename, $pid );
 		$image = new TimberImage( $iid );
 		$this->assertEquals( 1500, $image->width() );
+		$this->assertEquals( $filename, $image->file_loc );
 	}
 
 	function testInitFromFilePath() {
 		$image_file = self::copyTestImage();
 		$image = new TimberImage( $image_file );
 		$this->assertEquals( 1500, $image->width() );
+		$this->assertEquals( $image_file, $image->file_loc );
 	}
 
 	function testInitFromURL() {
 		$destination_path = self::copyTestImage();
-		$destination_path = TimberURLHelper::get_rel_path( $destination_path );
-		$destination_url = 'http://'.$_SERVER['HTTP_HOST'].$destination_path;
+		$destination_rel_path = TimberURLHelper::get_rel_path( $destination_path );
+		$destination_url = 'http://'.$_SERVER['HTTP_HOST'].'/'.$destination_rel_path;
 		$image = new TimberImage( $destination_url );
 		$this->assertEquals( $destination_url, $image->src() );
 		$this->assertEquals( $destination_url, (string)$image );
+		$this->assertEquals( $destination_path, $image->file_loc );
+	}
+
+	function testInitFromURLWithCustomWPDirectoryStructure() {
+		$this->setupCustomWPDirectoryStructure();
+		$destination_path = self::copyTestImage();
+		$destination_rel_path = TimberURLHelper::get_rel_path( $destination_path );
+		$destination_url = 'http://'.$_SERVER['HTTP_HOST'].'/'.$destination_rel_path;
+		$image = new TimberImage( $destination_url );
+		$upload_dir = wp_upload_dir();
+		$this->tearDownCustomWPDirectoryStructure();
+		$this->assertEquals( $destination_url, $image->src() );
+		$this->assertEquals( $destination_url, (string)$image );
+		$this->assertEquals( $destination_path, $image->file_loc );
 	}
 
 	function testPostThumbnails() {

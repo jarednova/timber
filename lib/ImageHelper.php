@@ -276,7 +276,7 @@ class ImageHelper {
 	 */
 	public static function get_server_location( $url ) {
 		// if we're already an absolute dir, just return
-		if ( 0 === strpos($url, ABSPATH) ) {
+		if ( 0 === strpos($url, URLHelper::get_root_dir()) ) {
 			return $url;
 		}
 		// otherwise, analyze URL then build mapping path
@@ -356,7 +356,7 @@ class ImageHelper {
 		);
 		$upload_dir = wp_upload_dir();
 		$tmp = $url;
-		if ( TextHelper::starts_with($tmp, ABSPATH) || TextHelper::starts_with($tmp, '/srv/www/') ) {
+		if ( TextHelper::starts_with($tmp, URLHelper::get_root_dir()) ) {
 			// we've been given a dir, not an url
 			$result['absolute'] = true;
 			if ( TextHelper::starts_with($tmp, $upload_dir['basedir']) ) {
