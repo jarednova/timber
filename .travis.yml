@@ -18,19 +18,19 @@ env:
     global:
         - TMPDIR=/tmp
     matrix:
-        - WP_VERSION=4.9.8 WP_MULTISITE=0 
-        - WP_VERSION=4.9.8 WP_MULTISITE=1
+        # WP_VERSION=4.9.8 WP_MULTISITE=0 
+        # WP_VERSION=4.9.8 WP_MULTISITE=1
         - WP_VERSION=latest WP_MULTISITE=0
-        - WP_VERSION=latest WP_MULTISITE=1
+        # WP_VERSION=latest WP_MULTISITE=1
 
-matrix:
-    include:
-    - php: 5.6.30
-      env: WP_VERSION=4.9.8 WP_MULTISITE=0 PREFER_LOWEST="--prefer-lowest --prefer-stable" IMG_LIBS=0 COVERAGE=1
-    - php: 7.4
-      env: WP_VERSION=latest WP_MULTISITE=0 IMG_LIBS=1 COVERAGE=1
-    - php: 7.4
-      env: WP_VERSION=latest WP_MULTISITE=1 IMG_LIBS=0 COVERAGE=1
+# matrix:
+#     include:
+#     - php: 5.6.30
+#       env: WP_VERSION=4.9.8 WP_MULTISITE=0 PREFER_LOWEST="--prefer-lowest --prefer-stable" IMG_LIBS=0 COVERAGE=1
+#     - php: 7.4
+#       env: WP_VERSION=latest WP_MULTISITE=0 IMG_LIBS=1 COVERAGE=1
+#     - php: 7.4
+#       env: WP_VERSION=latest WP_MULTISITE=1 IMG_LIBS=0 COVERAGE=1
 
 before_install:
     # phpenv config-add myconfig.ini --with-webp-dir

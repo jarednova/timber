@@ -125,6 +125,8 @@ class Image extends Post implements CoreInterface {
 	 * @return array|int
 	 */
 	protected function get_dimensions( $dim ) {
+		error_log('file_loc'.$this->file_loc);
+		error_log('filesize'.filesize($this->file_loc));
 		if ( isset($this->_dimensions) ) {
 			return $this->get_dimensions_loaded($dim);
 		}
@@ -203,10 +205,10 @@ class Image extends Post implements CoreInterface {
 		return $url;
 	}
 
-	public static function wp_upload_dir() {
+	public static function wp_upload_dir($reset = false) {
 		static $wp_upload_dir = false;
 
-		if ( !$wp_upload_dir ) {
+		if ( !$wp_upload_dir || $reset) {
 			$wp_upload_dir = wp_upload_dir();
 		}
 
@@ -236,7 +238,7 @@ class Image extends Post implements CoreInterface {
 				$this->init_with_url($iid);
 				return;
 			}
-			if ( strstr($iid, ABSPATH) ) {
+			if ( strstr($iid, URLHelper::get_root_dir()) ) {
 				$this->init_with_file_path($iid);
 				return;
 			}
@@ -325,8 +327,8 @@ class Image extends Post implements CoreInterface {
 	protected function init_with_url( $url ) {
 		$this->abs_url = $url;
 		if ( URLHelper::is_local($url) ) {
-			$this->file = URLHelper::remove_double_slashes(ABSPATH.URLHelper::get_rel_url($url));
-			$this->file_loc = URLHelper::remove_double_slashes(ABSPATH.URLHelper::get_rel_url($url));
+			$this->file = URLHelper::url_to_file_system($url);
+			$this->file_loc = URLHelper::url_to_file_system($url);
 		}
 	}
 
