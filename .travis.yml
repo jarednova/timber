@@ -20,9 +20,9 @@ env:
     matrix:
         - WP_VERSION=5.3.2 WP_MULTISITE=0
         - WP_VERSION=5.3.2 WP_MULTISITE=1
-        - WP_VERSION=latest WP_MULTISITE=0 COVERAGE=1 IMG_LIBS=1
+        - WP_VERSION=latest WP_MULTISITE=0 COVERAGE=1 IMG_LIBS=1 CODING_STYLE=1
         - WP_VERSION=latest WP_MULTISITE=1 COVERAGE=1 IMG_LIBS=1 STATIC_ANALYSIS=1
-
+        
 matrix:
     include:
     - php: 7.2
@@ -43,6 +43,7 @@ before_script:
     - if [ "$COVERAGE" == 1 ]; then composer require satooshi/php-coveralls:1.0.*; fi
 
 script:
+    - if [ "$CODING_STYLE" == 1 ]; then composer lint; fi
     - if [ "$COVERAGE" == 1 ]; then mkdir -p build/logs; vendor/phpunit/phpunit/phpunit --coverage-clover build/logs/clover.xml -c phpunit.xml --verbose; else vendor/phpunit/phpunit/phpunit -c phpunit-nocover.xml --verbose; fi
     - if [ "$STATIC_ANALYSIS" == 1 ]; then vendor/bin/phpstan analyze -l 1; fi
 
