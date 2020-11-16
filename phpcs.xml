@@ -19,6 +19,24 @@
     <!-- Show sniff names and progress. -->
     <arg value="sp"/>
 
+	<!-- Improvements when running through Composer scripts -->
+	<config name="ignore_errors_on_exit" value="1"/>
+	<config name="ignore_warnings_on_exit" value="1"/>
+
+	<!--
+		Check for cross-version support for PHP 7.1 and higher.
+
+		As discussed in https://github.com/timber/timber/issues/1863.
+	-->
+	<config name="testVersion" value="7.1-"/>
+
+	<!--
+		Check for WordPress compatibility with version 5.3 and higher.
+
+		As discussed in https://github.com/timber/timber/pull/2135.
+	-->
+	<config name="minimum_supported_wp_version" value="5.3"/>
+
     <!--
         WordPress-Extra
         Best practices beyond core WordPress Coding Standards.
@@ -29,13 +47,99 @@
     <rule ref="WordPress-Extra">
         <!-- Do not check for proper WordPress file names. -->
         <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase" />
+
+		<!-- Ternaries are fine. -->
+		<exclude name="WordPress.PHP.DisallowShortTernary.Found" />
+
+		<!-- Temporary exclusions for sniffs that can be fixed with phpcbf. -->
+		<exclude phpcs-only="true" name="Generic.Arrays.DisallowShortArraySyntax.Found" />
+		<exclude phpcs-only="true" name="Generic.Commenting.DocComment.SpacingAfter" />
+		<exclude phpcs-only="true" name="Generic.Commenting.DocComment.SpacingBeforeTags" />
+		<exclude phpcs-only="true" name="Generic.ControlStructures.InlineControlStructure.NotAllowed" />
+		<exclude phpcs-only="true" name="Generic.Files.EndFileNewline.NotFound" />
+		<exclude phpcs-only="true" name="Generic.Formatting.DisallowMultipleStatements.SameLine" />
+		<exclude phpcs-only="true" name="Generic.Formatting.MultipleStatementAlignment.IncorrectWarning" />
+		<exclude phpcs-only="true" name="Generic.Formatting.MultipleStatementAlignment.NotSameWarning" />
+		<exclude phpcs-only="true" name="Generic.Formatting.SpaceAfterCast.NoSpace" />
+		<exclude phpcs-only="true" name="Generic.Functions.OpeningFunctionBraceKernighanRitchie.ContentAfterBrace" />
+		<exclude phpcs-only="true" name="Generic.Functions.OpeningFunctionBraceKernighanRitchie.SpaceBeforeBrace" />
+		<exclude phpcs-only="true" name="Generic.PHP.LowerCaseType.ReturnTypeFound" />
+		<exclude phpcs-only="true" name="Generic.WhiteSpace.ArbitraryParenthesesSpacing.SpaceAfterOpen" />
+		<exclude phpcs-only="true" name="Generic.WhiteSpace.ArbitraryParenthesesSpacing.SpaceBeforeClose" />
+		<exclude phpcs-only="true" name="Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed" />
+		<exclude phpcs-only="true" name="Generic.WhiteSpace.ScopeIndent.Incorrect" />
+		<exclude phpcs-only="true" name="Generic.WhiteSpace.ScopeIndent.IncorrectExact" />
+		<exclude phpcs-only="true" name="PEAR.Functions.FunctionCallSignature.CloseBracketLine" />
+		<exclude phpcs-only="true" name="PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket" />
+		<exclude phpcs-only="true" name="PEAR.Functions.FunctionCallSignature.Indent" />
+		<exclude phpcs-only="true" name="PEAR.Functions.FunctionCallSignature.MultipleArguments" />
+		<exclude phpcs-only="true" name="PEAR.Functions.FunctionCallSignature.SpaceAfterOpenBracket" />
+		<exclude phpcs-only="true" name="PEAR.Functions.FunctionCallSignature.SpaceBeforeCloseBracket" />
+		<exclude phpcs-only="true" name="PSR12.Keywords.ShortFormTypeKeywords.LongFound" />
+		<exclude phpcs-only="true" name="PSR2.ControlStructures.ElseIfDeclaration.NotAllowed" />
+		<exclude phpcs-only="true" name="PSR2.Methods.MethodDeclaration.AbstractAfterVisibility" />
+		<exclude phpcs-only="true" name="Squiz.Classes.SelfMemberReference.NotUsed" />
+		<exclude phpcs-only="true" name="Squiz.ControlStructures.ControlSignature.NewlineAfterOpenBrace" />
+		<exclude phpcs-only="true" name="Squiz.ControlStructures.ControlSignature.SpaceAfterCloseParenthesis" />
+		<exclude phpcs-only="true" name="Squiz.ControlStructures.ControlSignature.SpaceAfterKeyword" />
+		<exclude phpcs-only="true" name="Squiz.Functions.FunctionDeclarationArgumentSpacing.SpacingAfterOpen" />
+		<exclude phpcs-only="true" name="Squiz.Functions.FunctionDeclarationArgumentSpacing.SpacingBetween" />
+		<exclude phpcs-only="true" name="Squiz.Strings.ConcatenationSpacing.PaddingFound" />
+		<exclude phpcs-only="true" name="Squiz.Strings.DoubleQuoteUsage.NotRequired" />
+		<exclude phpcs-only="true" name="Squiz.WhiteSpace.ScopeKeywordSpacing.Incorrect" />
+		<exclude phpcs-only="true" name="Squiz.WhiteSpace.SemicolonSpacing.Incorrect" />
+		<exclude phpcs-only="true" name="Squiz.WhiteSpace.SuperfluousWhitespace.EmptyLines" />
+		<exclude phpcs-only="true" name="Squiz.WhiteSpace.SuperfluousWhitespace.EndLine" />
+		<exclude phpcs-only="true" name="WordPress.Arrays.ArrayDeclarationSpacing.ArrayItemNoNewLine" />
+		<exclude phpcs-only="true" name="WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound" />
+		<exclude phpcs-only="true" name="WordPress.Arrays.ArrayDeclarationSpacing.CloseBraceNewLine" />
+		<exclude phpcs-only="true" name="WordPress.Arrays.ArrayDeclarationSpacing.NoSpaceAfterArrayOpener" />
+		<exclude phpcs-only="true" name="WordPress.Arrays.ArrayDeclarationSpacing.NoSpaceBeforeArrayCloser" />
+		<exclude phpcs-only="true" name="WordPress.Arrays.ArrayIndentation.ItemNotAligned" />
+		<exclude phpcs-only="true" name="WordPress.Arrays.ArrayIndentation.MultiLineArrayItemNotAligned" />
+		<exclude phpcs-only="true" name="WordPress.Arrays.ArrayKeySpacingRestrictions.NoSpacesAroundArrayKeys" />
+		<exclude phpcs-only="true" name="WordPress.Arrays.CommaAfterArrayItem.NoComma" />
+		<exclude phpcs-only="true" name="WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned" />
+		<exclude phpcs-only="true" name="WordPress.Classes.ClassInstantiation.MissingParenthesis" />
+		<exclude phpcs-only="true" name="WordPress.PHP.TypeCasts.DoubleRealFound" />
+		<exclude phpcs-only="true" name="WordPress.WP.CapitalPDangit.Misspelled" />
+		<exclude phpcs-only="true" name="WordPress.WhiteSpace.CastStructureSpacing.NoSpaceBeforeOpenParenthesis" />
+		<exclude phpcs-only="true" name="WordPress.WhiteSpace.ControlStructureSpacing.BlankLineAfterEnd" />
+		<exclude phpcs-only="true" name="WordPress.WhiteSpace.ControlStructureSpacing.ExtraSpaceBeforeCloseParenthesis" />
+		<exclude phpcs-only="true" name="WordPress.WhiteSpace.ControlStructureSpacing.NoSpaceAfterCloseParenthesis" />
+		<exclude phpcs-only="true" name="WordPress.WhiteSpace.ControlStructureSpacing.NoSpaceAfterOpenParenthesis" />
+		<exclude phpcs-only="true" name="WordPress.WhiteSpace.ControlStructureSpacing.NoSpaceAfterStructureOpen" />
+		<exclude phpcs-only="true" name="WordPress.WhiteSpace.ControlStructureSpacing.NoSpaceBeforeCloseParenthesis" />
+		<exclude phpcs-only="true" name="WordPress.WhiteSpace.ControlStructureSpacing.NoSpaceBeforeOpenParenthesis" />
+		<exclude phpcs-only="true" name="WordPress.WhiteSpace.ControlStructureSpacing.SpaceBeforeFunctionOpenParenthesis" />
+		<exclude phpcs-only="true" name="WordPress.WhiteSpace.DisallowInlineTabs.NonIndentTabsUsed" />
+		<exclude phpcs-only="true" name="WordPress.WhiteSpace.OperatorSpacing.NoSpaceAfter" />
+		<exclude phpcs-only="true" name="WordPress.WhiteSpace.OperatorSpacing.NoSpaceBefore" />
+		<exclude phpcs-only="true" name="WordPress.WhiteSpace.OperatorSpacing.SpacingAfter" />
     </rule>
 
     <!--
         WordPress-Docs
         WordPress Coding Standards for Inline Documentation and Comments.
     -->
-    <rule ref="WordPress-Docs" />
+    <rule ref="WordPress-Docs">
+		<!-- We don’t need file comments. -->
+		<exclude name="Squiz.Commenting.FileComment.Missing" />
+
+		<!-- Temporary exclusions for sniffs that can be fixed with phpcbf. -->
+		<exclude phpcs-only="true" name="Squiz.Commenting.BlockComment.NoNewLine" />
+		<exclude phpcs-only="true" name="Squiz.Commenting.DocCommentAlignment.SpaceBeforeStar" />
+		<exclude phpcs-only="true" name="Squiz.Commenting.FunctionComment.SpacingAfterParamType" />
+		<exclude phpcs-only="true" name="Squiz.Commenting.InlineComment.NoSpaceBefore" />
+	</rule>
+
+	<!--
+		PHPCompatibility ruleset
+
+		@link https://github.com/PHPCompatibility/PHPCompatibilityWP
+		@link https://github.com/PHPCompatibility/PHPCompatibility
+	-->
+    <rule ref="PHPCompatibility"/>
 
     <!--
         File Names
@@ -52,10 +156,10 @@
     </rule>
 
     <!--
-    Line length
+		Line length
 
-    Lines should be 100 chars long at max (triggers warning),
-    and should in no case exceed 120 characters (triggers error).
+		Lines should be 100 chars long at max (triggers warning),
+		and should in no case exceed 120 characters (triggers error).
     -->
     <rule ref="Generic.Files.LineLength">
         <properties>
@@ -79,4 +183,14 @@
         </properties>
     </rule>
 
+	<!--
+		Short Array Syntax
+
+		The WordPress Coding Standards state that long array syntax should be used, but nah.
+
+		@link https://make.wordpress.org/core/2019/07/12/php-coding-standards-changes/
+	-->
+	<rule ref="Generic.Arrays.DisallowLongArraySyntax.Found">
+	  <type>error</type>
+	</rule>
 </ruleset>
