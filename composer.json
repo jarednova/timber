@@ -42,7 +42,8 @@
     "wpackagist-plugin/co-authors-plus": "3.2.*|3.4.*",
     "dealerdirect/phpcodesniffer-composer-installer": "^0.7.0",
     "szepeviktor/phpstan-wordpress": "^0.6.0",
-    "php-stubs/wp-cli-stubs": "^2.2.0"
+    "php-stubs/wp-cli-stubs": "^2.2.0",
+    "htmlburger/carbon-fields": "^3.2"
   },
   "suggest": {
     "satooshi/php-coveralls": "1.0.* for code coverage"

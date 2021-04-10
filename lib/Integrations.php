@@ -10,6 +10,7 @@ namespace Timber;
 class Integrations {
 
 	public $acf;
+	public $carbon_fields;
 	public $coauthors_plus;
 	public $wpml;
 
@@ -24,6 +25,9 @@ class Integrations {
 	public function maybe_init_integrations() {
 		if ( class_exists('ACF') ) {
 			$this->acf = new Integrations\ACF();
+		}
+		if ( class_exists('Carbon_Fields\Carbon_Fields') ) {
+			$this->carbon_fields = new Integrations\CarbonFields();
 		}
 		if ( class_exists('CoAuthors_Plus') ) {
 			$this->coauthors_plus = new Integrations\CoAuthorsPlus();
