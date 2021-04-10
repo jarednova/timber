@@ -106,7 +106,8 @@ class Resize extends ImageOperation {
 			return array(
 				'x' => 0, 'y' => 0,
 				'src_w' => $src_w, 'src_h' => $src_h,
-				'target_w' => $w, 'target_h' => $h
+				'target_w' => $w, 'target_h' => $h,
+				'crop' => false
 			);
 		}
 		// Get ratios
@@ -188,13 +189,17 @@ class Resize extends ImageOperation {
 			}
 
 			$crop = self::get_target_sizes($image);
-			$image->crop( 	$crop['x'],
-							$crop['y'],
-							$crop['src_w'],
-							$crop['src_h'],
-							$crop['target_w'],
-							$crop['target_h']
-			);
+			if (!isset($crop['crop']) || $crop['crop'] !== false) {
+				$image->crop( 	$crop['x'],
+								$crop['y'],
+								$crop['src_w'],
+								$crop['src_h'],
+								$crop['target_w'],
+								$crop['target_h']
+				);
+			else {
+				$image->resize($crop['target_w'], $crop['target_h']);
+			}
 			$quality = apply_filters( 'wp_editor_set_quality', 82, 'image/jpeg');
 			$image->set_quality($quality);
 			$result = $image->save($save_filename);
