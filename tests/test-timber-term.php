@@ -13,6 +13,25 @@
 			$this->assertEquals('Cardinals', $baseball_teams[0]->name());
 		}
 
+		/**
+		 * @ticket #2362
+		 */
+		function testMultiTermsWithSameSlug() {
+			$post_tag_id = $this->factory->term->create(array('name' => 'Security', 'taxonomy' => 'post_tag'));
+			$category_id = $this->factory->term->create(array('name' => 'Security', 'taxonomy' => 'category'));
+			$post_id     = $this->factory->post->create();
+			wp_set_object_terms($post_id, $post_tag_id, 'post_tag', true);
+			wp_set_object_terms($post_id, $category_id, 'category', true);
+
+			$term_default  = new Timber\Term('security');
+			$this->assertEquals('post_tag', $term_default->taxonomy);
+			$this->assertEquals('Security', $term_default->title());
+
+			$term_category = new Timber\Term('security', 'category');
+			$this->assertEquals('category', $term_category->taxonomy);
+			$this->assertEquals('Security', $term_category->title());
+		}
+
 		function testConstructorWithClass() {
 			register_taxonomy('arts', array('post'));
 
