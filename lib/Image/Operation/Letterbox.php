@@ -7,28 +7,75 @@ use Timber\ImageHelper;
 use Timber\PathHelper;
 use Timber\Image\Operation as ImageOperation;
 
-/*
+/**
  * Changes image to new size, by shrinking/enlarging then padding with colored bands,
  * so that no part of the image is cropped or stretched.
  *
  * Arguments:
- * - width of new image
+ * - array of parameters or width of new image
  * - height of new image
  * - color of padding
+ *
+ * @example
+ * ```twig
+ * {{ Image(post.hero_image)|letterbox('width':500,'height':500,'color':'#ff0000') }}
+ * ```
  */
 class Letterbox extends ImageOperation {
-
-	private $w, $h, $color;
+	/**
+	 * Array of parameters (**w** or **width** image width, **h** or **height** image height,
+	 * **color** image padding bands color)
+	 * or image width when integer.
+	 *
+	 * @var array|integer
+	 */
+	private $parameters_or_w;
 
 	/**
-	 * @param int    $w     width of result image
-	 * @param int    $h     height
-	 * @param string $color hex string, for color of padding bands
+	 * Image height
+	 *
+	 * @var integer
 	 */
-	public function __construct( $w, $h, $color ) {
-		$this->w = $w;
-		$this->h = $h;
-		$this->color = $color;
+	private $h;
+
+	/**
+	 * Hex string, for color of padding bands.
+	 *
+	 * @var string
+	 */
+	private $color;
+
+	/**
+	 * @param    array|int $parameters_or_w    Array of all information like width, height or color.
+	 *                                         Width of new image if integer.
+	 * @param    int       $h                  Image height.
+	 * @param    string    $color              Hex string, for color of padding bands.
+	 */
+	public function __construct( $parameters_or_w, $h, $color ) {
+		if ( is_array( $parameters_or_w ) ) {
+			$args = wp_parse_args( $parameters_or_w );
+
+			if ( isset( $args['w'] ) ) {
+				$width = $args['w'];
+			} elseif ( $args['width'] ) {
+				$width = $args['width'];
+			}
+
+			if ( isset( $args['h'] ) ) {
+				$height = $args['h'];
+			} elseif ( $args['height'] ) {
+				$height = $args['height'];
+			}
+
+			$this->w = $width;
+			$this->h = $height;
+
+			$this->color = $args['color'];
+		} else {
+			$this->w = $parameters_or_w;
+			$this->h = $h;
+			$this->color = $color;
+		}
 	}
 
 	/**
@@ -63,7 +110,7 @@ class Letterbox extends ImageOperation {
 		if ( ImageHelper::is_svg($load_filename) ) {
 			return false;
 		}
-		
+
 		$w = $this->w;
 		$h = $this->h;
 

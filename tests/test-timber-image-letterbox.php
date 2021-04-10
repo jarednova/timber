@@ -21,6 +21,18 @@ class TestTimberImageLetterbox extends TimberImage_UnitTestCase {
 		$this->assertTrue( TestTimberImage::checkPixel($location_of_image, 1, 1, "#CCC") );
 	}
 
+	function testLetterboxArray() {
+		$file_loc = TestTimberImage::copyTestImage( 'eastern.jpg' );
+		$upload_dir = wp_upload_dir();
+		$image = $upload_dir['url'].'/eastern.jpg';
+		$new_file = TimberImageHelper::letterbox( $image, array( 'w' => 500, 'h' => 500, 'color' => '#CCC' ), true );
+		$location_of_image = TimberImageHelper::get_server_location( $new_file );
+		$this->addFile( $location_of_image );
+		$this->assertTrue (TestTimberImage::checkSize($location_of_image, 500, 500));
+		//whats the bg/color of the image
+		$this->assertTrue( TestTimberImage::checkPixel($location_of_image, 1, 1, "#CCC") );
+	}
+
 	function testLetterboxColorChange() {
 		$file_loc = TestTimberImage::copyTestImage( 'eastern.jpg' );
 		$upload_dir = wp_upload_dir();

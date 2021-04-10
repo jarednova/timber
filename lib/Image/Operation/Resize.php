@@ -11,33 +11,94 @@ use Timber\Image\Operation as ImageOperation;
  * then cropping to respect new ratio.
  *
  * Arguments:
- * - width of new image
+ * - array of parameters or width of new image
  * - height of new image
  * - crop method
+ *
+ * @example
+ * ```twig
+ * {{ Image(post.hero_image)|resize('width':500,'height':500,'crop':'center') }}
+ * ```
  */
 class Resize extends ImageOperation {
 
-   private $w, $h, $crop;
+	/**
+	 * Array of parameters (**w** or **width** image width, **h** or **height** image height,
+	 * **crop** image cropping)
+	 * or image width when integer.
+	 *
+	 * @var array|integer
+	 */
+	private $parameters_or_w;
 
 	/**
-	 * @param int    $w    width of new image
-	 * @param int    $h    height of new image
-	 * @param string $crop cropping method, one of: 'default', 'center', 'top', 'bottom', 'left', 'right', 'top-center', 'bottom-center'.
+	 * Image height
+	 *
+	 * @var integer
 	 */
-	public function __construct( $w, $h, $crop ) {
-		$this->w = $w;
-		$this->h = $h;
-		// Sanitize crop position
-		$allowed_crop_positions = array('default', 'center', 'top', 'bottom', 'left', 'right', 'top-center', 'bottom-center');
-		if ( $crop !== false && !in_array($crop, $allowed_crop_positions) ) {
-			$crop = $allowed_crop_positions[0];
+	private $h;
+
+	/**
+	 * Cropping method, one of: 'default', 'center', 'top', 'bottom',
+	 * 'left', 'right', 'top-center', 'bottom-center'.
+	 *
+	 * @var string
+	 */
+	private $crop;
+
+	/**
+	 * @param array|int $parameters_or_w    Array of all information like width, height or cropping.
+	 *                                      Width of new image if integer.
+	 * @param int       $h                  height of new image.
+	 * @param string    $crop               cropping method, one of: 'default', 'center', 'top', 'bottom',
+	 *                                      'left', 'right', 'top-center', 'bottom-center'.
+	 */
+	public function __construct( $parameters_or_w, $h, $crop ) {
+
+		$allowed_crop_positions = array( 'default', 'center', 'top', 'bottom', 'left', 'right', 'top-center', 'bottom-center' );
+
+		if ( is_array( $parameters_or_w ) ) {
+			$args = wp_parse_args( $parameters_or_w,
+				array(
+					'crop' => '',
+				)
+			);
+
+			if ( isset( $args['w'] ) ) {
+				$width = $args['w'];
+			} elseif ( $args['width'] ) {
+				$width = $args['width'];
+			}
+
+			if ( isset( $args['h'] ) ) {
+				$height = $args['h'];
+			} elseif ( $args['height'] ) {
+				$height = $args['height'];
+			}
+
+			$this->w = $width;
+			$this->h = $height;
+
+			if ( false !== $args['crop'] && ! in_array( $args['crop'], $allowed_crop_positions ) ) {
+				$args['crop'] = $allowed_crop_positions[0];
+			}
+			$this->crop = $args['crop'];
+		} else {
+			$this->w = $parameters_or_w;
+			$this->h = $h;
+
+			// Sanitize crop position.
+			if ( false !== $crop && ! in_array( $crop, $allowed_crop_positions ) ) {
+				$crop = $allowed_crop_positions[0];
+			}
+			$this->crop = $crop;
 		}
-		$this->crop = $crop;
+
 	}
 
 	/**
-	 * @param   string    $src_filename     the basename of the file (ex: my-awesome-pic)
-	 * @param   string    $src_extension    the extension (ex: .jpg)
+	 * @param   string $src_filename     the basename of the file (ex: my-awesome-pic)
+	 * @param   string $src_extension    the extension (ex: .jpg)
 	 * @return  string    the final filename to be used (ex: my-awesome-pic-300x200-c-default.jpg)
 	 */
 	public function filename( $src_filename, $src_extension ) {
@@ -49,7 +110,7 @@ class Resize extends ImageOperation {
 		if ( $this->h ) {
 			$h = $this->h;
 		}
-		$result = $src_filename.'-'.$w.'x'.$h.'-c-'.($this->crop ? $this->crop : 'f'); // Crop will be either user named or f (false)
+		$result = $src_filename . '-' . $w . 'x' . $h . '-c-' . ( $this->crop ? $this->crop : 'f' ); // Crop will be either user named or f (false)
 		if ( $src_extension ) {
 			$result .= '.' . $src_extension;
 		}
@@ -87,40 +148,43 @@ class Resize extends ImageOperation {
 	 * @param \WP_Image_Editor $image
 	 */
 	protected function get_target_sizes( \WP_Image_Editor $image ) {
-		$w = $this->w;
-		$h = $this->h;
+		$w    = $this->w;
+		$h    = $this->h;
 		$crop = $this->crop;
 
 		$current_size = $image->get_size();
-		$src_w = $current_size['width'];
-		$src_h = $current_size['height'];
-		$src_ratio = $src_w / $src_h;
-		if ( !$h ) {
+		$src_w        = $current_size['width'];
+		$src_h        = $current_size['height'];
+		$src_ratio    = $src_w / $src_h;
+		if ( ! $h ) {
 			$h = round($w / $src_ratio);
 		}
-		if ( !$w ) {
-			//the user wants to resize based on constant height
+		if ( ! $w ) {
+			// the user wants to resize based on constant height
 			$w = round($h * $src_ratio);
 		}
-		if ( !$crop ) {
+		if ( ! $crop ) {
 			return array(
-				'x' => 0, 'y' => 0,
-				'src_w' => $src_w, 'src_h' => $src_h,
-				'target_w' => $w, 'target_h' => $h
+				'x'        => 0,
+				'y'        => 0,
+				'src_w'    => $src_w,
+				'src_h'    => $src_h,
+				'target_w' => $w,
+				'target_h' => $h,
 			);
 		}
 		// Get ratios
 		$dest_ratio = $w / $h;
-		$src_wt = $src_h * $dest_ratio;
-		$src_ht = $src_w / $dest_ratio;
-		$src_x = $src_w / 2 - $src_wt / 2;
-		$src_y = ($src_h - $src_ht) / 6;
-		//now specific overrides based on options:
+		$src_wt     = $src_h * $dest_ratio;
+		$src_ht     = $src_w / $dest_ratio;
+		$src_x      = $src_w / 2 - $src_wt / 2;
+		$src_y      = ( $src_h - $src_ht ) / 6;
+		// now specific overrides based on options:
 		switch ( $crop ) {
 			case 'center':
 				// Get source x and y
-				$src_x = round(($src_w - $src_wt) / 2);
-				$src_y = round(($src_h - $src_ht) / 2);
+				$src_x = round(( $src_w - $src_wt ) / 2);
+				$src_y = round(( $src_h - $src_ht ) / 2);
 				break;
 
 			case 'top':
@@ -132,11 +196,11 @@ class Resize extends ImageOperation {
 				break;
 
 			case 'top-center':
-				$src_y = round(($src_h - $src_ht) / 4);
+				$src_y = round(( $src_h - $src_ht ) / 4);
 				break;
 
 			case 'bottom-center':
-				$src_y = $src_h - $src_ht - round(($src_h - $src_ht) / 4);
+				$src_y = $src_h - $src_ht - round(( $src_h - $src_ht ) / 4);
 				break;
 
 			case 'left':
@@ -148,16 +212,22 @@ class Resize extends ImageOperation {
 				break;
 		}
 		// Crop the image
-		return ($dest_ratio > $src_ratio)
+		return ( $dest_ratio > $src_ratio )
 			? array(
-				'x' => 0, 'y' => $src_y,
-				'src_w' => $src_w, 'src_h' => $src_ht,
-				'target_w' => $w, 'target_h' => $h
+				'x'        => 0,
+				'y'        => $src_y,
+				'src_w'    => $src_w,
+				'src_h'    => $src_ht,
+				'target_w' => $w,
+				'target_h' => $h,
 			)
 			: array(
-				'x' => $src_x, 'y' => 0,
-				'src_w' => $src_wt, 'src_h' => $src_h,
-				'target_w' => $w, 'target_h' => $h
+				'x'        => $src_x,
+				'y'        => 0,
+				'src_w'    => $src_wt,
+				'src_h'    => $src_h,
+				'target_w' => $w,
+				'target_h' => $h,
 			);
 	}
 
@@ -177,10 +247,10 @@ class Resize extends ImageOperation {
 			return false;
 		}
 		$image = wp_get_image_editor($load_filename);
-		if ( !is_wp_error($image) ) {
-			//should be resized by gif resizer
+		if ( ! is_wp_error($image) ) {
+			// should be resized by gif resizer
 			if ( ImageHelper::is_animated_gif($load_filename) ) {
-				//attempt to resize, return if successful proceed if not
+				// attempt to resize, return if successful proceed if not
 				$gif = self::run_animated_gif($load_filename, $save_filename, $image);
 				if ( $gif ) {
 					return true;
@@ -188,14 +258,15 @@ class Resize extends ImageOperation {
 			}
 
 			$crop = self::get_target_sizes($image);
-			$image->crop( 	$crop['x'],
-							$crop['y'],
-							$crop['src_w'],
-							$crop['src_h'],
-							$crop['target_w'],
-							$crop['target_h']
+			$image->crop(
+				$crop['x'],
+				$crop['y'],
+				$crop['src_w'],
+				$crop['src_h'],
+				$crop['target_w'],
+				$crop['target_h']
 			);
-			$quality = apply_filters( 'wp_editor_set_quality', 82, 'image/jpeg');
+			$quality = apply_filters('wp_editor_set_quality', 82, 'image/jpeg');
 			$image->set_quality($quality);
 			$result = $image->save($save_filename);
 			if ( is_wp_error($result) ) {
@@ -207,11 +278,11 @@ class Resize extends ImageOperation {
 			} else {
 				return true;
 			}
-		} else if ( isset($image->error_data['error_loading_image']) ) {
+		} elseif ( isset($image->error_data['error_loading_image']) ) {
 			// @codeCoverageIgnoreStart
-			Helper::error_log('Error loading '.$image->error_data['error_loading_image']);
+			Helper::error_log('Error loading ' . $image->error_data['error_loading_image']);
 		} else {
-			if ( !extension_loaded('gd') ) {
+			if ( ! extension_loaded('gd') ) {
 				Helper::error_log('Can not resize image, please installed php-gd');
 			} else {
 				Helper::error_log($image);
