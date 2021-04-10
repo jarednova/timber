@@ -8,6 +8,7 @@ use Timber\Image\Operation\ToWebp;
 use Timber\Image\Operation\Resize;
 use Timber\Image\Operation\Retina;
 use Timber\Image\Operation\Letterbox;
+use Timber\Image\Operation\Grayscale;
 
 use Timber\URLHelper;
 use Timber\PathHelper;
@@ -204,19 +205,33 @@ class ImageHelper {
 		return self::_operate($src, $op, $force);
 	}
 
-    /**
-     * Generates a new image by converting the source into WEBP if supported by the server
-     *
-     * @param string  $src      a url or path to the image (http://example.org/wp-content/uploads/2014/image.webp)
-     *							or (/wp-content/uploads/2014/image.jpg)
-     *							If webp is not supported, a jpeg image will be generated
-	 * @param int     $quality  ranges from 0 (worst quality, smaller file) to 100 (best quality, biggest file)
-     * @param bool    $force
-     */
-    public static function img_to_webp( $src, $quality = 80, $force = false ) {
-        $op = new Image\Operation\ToWebp($quality);
-        return self::_operate($src, $op, $force);
-    }
+  /**
+   * Generates a new image by converting the source into WEBP if supported by the server
+   *
+   * @param string  $src      a url or path to the image (http://example.org/wp-content/uploads/2014/image.webp)
+   *							or (/wp-content/uploads/2014/image.jpg)
+   *							If webp is not supported, a jpeg image will be generated
+   * @param int     $quality  ranges from 0 (worst quality, smaller file) to 100 (best quality, biggest file)
+   * @param bool    $force
+   */
+  public static function img_to_webp( $src, $quality = 80, $force = false ) {
+    $op = new Image\Operation\ToWebp($quality);
+    return self::_operate($src, $op, $force);
+  }
+
+	/**
+   * Generates a new image by converting the source into grayscale if supported by the server
+   *
+   * @param string  $src      a url or path to the image (http://example.org/wp-content/uploads/2014/image.jpg)
+   *							or (/wp-content/uploads/2014/image.jpg)
+   *							If webp is not supported, a jpeg image will be generated
+   * @param int     $quality  ranges from 0 (worst quality, smaller file) to 100 (best quality, biggest file)
+   * @param bool    $force
+   */
+  public static function img_grayscale( $src, $force = false ) {
+    $op = new Image\Operation\Grayscale();
+    return self::_operate($src, $op, $force);
+  }
 
 	//-- end of public methods --//
 

@@ -178,6 +178,7 @@ class Twig {
 		$twig->addFilter(new Twig_Filter('letterbox', array('Timber\ImageHelper', 'letterbox')));
 		$twig->addFilter(new Twig_Filter('tojpg', array('Timber\ImageHelper', 'img_to_jpg')));
 		$twig->addFilter(new Twig_Filter('towebp', array('Timber\ImageHelper', 'img_to_webp')));
+    $twig->addFilter(new Twig_Filter('grayscale', array('Timber\ImageHelper', 'img_grayscale')));
 
 		/* debugging filters */
 		$twig->addFilter(new Twig_Filter('get_class', 'get_class'));

@@ -83,6 +83,24 @@ Similar to the `|tojpg` filter, there’s a `|towebp` filter.
 </picture>
 ```
 
+### Converting an image to grayscale
+
+You can use Timber to generate a grayscale image:
+
+```twig
+<img src="{{ post.thumbnail.src|grayscale }}" />
+```
+
+You can use this in conjunction with other filters.
+
+```twig
+<img src="{{ post.thumbnail.src|grayscale|resize(300, 300) }}" />
+```
+
+Filters are executed from left to right. You’ll probably want to convert to grayscale before running the resizing, etc.
+
+Unfortunately, it’s not possible to use the `|grayscale` filter with transparent images at this time. Transparent pixels will be converted to black.
+
 ## Generating retina sizes
 
 You can use Timber to generate @2x image sizes for retina devices. For example, using `srcset`:
