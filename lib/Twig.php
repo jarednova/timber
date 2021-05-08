@@ -6,6 +6,7 @@ use Twig\Environment;
 use Twig\Extension\CoreExtension;
 use Twig\TwigFunction;
 use Twig\TwigFilter;
+use Twig\Error\Error;
 
 use Timber\Factory\PostFactory;
 use Timber\Factory\TermFactory;
@@ -14,6 +15,7 @@ use Timber\Factory\TermFactory;
  * Class Twig
  */
 class Twig {
+	
 	public static $dir_name;
 
 	/**
@@ -22,12 +24,178 @@ class Twig {
 	public static function init() {
 		$self = new self();
 
-        add_action( 'timber/twig/filters', array( $self, 'add_timber_filters' ) );
-		add_action( 'timber/twig/functions', array( $self, 'add_timber_functions' ) );
-		add_action( 'timber/twig/escapers', array( $self, 'add_timber_escapers' ) );
+        add_action( 'timber/twig/filters', [ $self, 'add_timber_filters' ] );
+		add_action( 'timber/twig/functions', [ $self, 'add_timber_functions' ] );
+		add_action( 'timber/twig/escapers', [ $self, 'add_timber_escapers' ] );
 
         add_filter( 'timber/loader/twig', [ $self, 'set_defaults' ] );
-  }
+	}
+
+	/**
+	 * Get Timber default functions
+	 *
+	 * @return array Default Timber functions
+	 */
+	public function get_timber_functions() {
+
+		$postFactory = new PostFactory();  
+		$termFactory = new TermFactory();
+
+		return apply_filters( 'timber/twig/default_functions', [
+			'action' => [
+				'callable' => function( $action_name, ...$args ) {
+					do_action_ref_array( $action_name, $args );
+				}
+			],
+			'function' => [
+				'callable' => [$this, 'exec_function'],
+			],
+			'fn' => [
+				'callable' => [$this, 'exec_function'],
+			],
+			'get_post' => [
+				'callable' => [Timber::class, 'get_post'],
+			],
+			'get_image' => [
+				'callable' => [Timber::class, 'get_image'],
+			],
+			'get_attachment' => [
+				'callable' => [Timber::class, 'get_attachment'],
+			],
+			'get_posts' => [
+				'callable' => [Timber::class, 'get_posts'],
+			],
+			'get_attachment_by' => [
+				'callable' => [Timber::class, 'get_attachment_by'],
+			],
+			'get_term' => [
+				'callable' => [Timber::class, 'get_term'],
+			],
+			'get_terms' => [
+				'callable' => [Timber::class, 'get_terms'],
+			],
+			'get_user' => [
+				'callable' => [Timber::class, 'get_user'],
+			],
+			'get_users' => [
+				'callable' => [Timber::class, 'get_users'],
+			],
+			'get_comment' => [
+				'callable' => [Timber::class, 'get_comment'],
+			],
+			'get_comments' => [
+				'callable' => [Timber::class, 'get_comments'],
+			],
+			'Post' => [
+				'callable' => function ($post_id) use ($postFactory) {
+					Helper::deprecated('{{ Post() }}', '{{ get_post() }} or {{ get_posts() }}', '2.0.0');
+					return $postFactory->from($post_id);
+				},
+				'options' => [
+					'deprecated' => true,
+				],
+			],
+			'TimberPost' => [
+				'callable' => function ($post_id) use ($postFactory) {
+					Helper::deprecated('{{ TimberPost() }}', '{{ get_post() }} or {{ get_posts() }}', '2.0.0');
+					return $postFactory->from($post_id);
+				},
+				'options' => [
+					'deprecated' => true,
+				],
+			],
+			'Image' => [
+				'callable' => function ($post_id) use ($postFactory) {
+					Helper::deprecated('{{ Image() }}', '{{ get_post() }} or {{ get_attachment_by() }}', '2.0.0');
+					return $postFactory->from($post_id);
+				},
+				'options' => [
+					'deprecated' => true,
+				],
+			],
+			'TimberImage' => [
+				'callable' => function ($post_id) use ($postFactory) {
+					Helper::deprecated('{{ TimberImage() }}', '{{ get_post() }} or {{ get_posts() }}', '2.0.0');
+					return $postFactory->from($post_id);
+				},
+				'options' => [
+					'deprecated' => true,
+				],
+			],
+			'Term' => [
+				'callable' => function ($term_id) use ($termFactory) {
+					Helper::deprecated('{{ Term() }}', '{{ get_term() }} or {{ get_terms() }}', '2.0.0');
+					return $termFactory->from( $term_id );
+				},
+				'options' => [
+					'deprecated' => true,
+				],
+			],
+			'TimberTerm' => [
+				'callable' => function ($term_id) use ($termFactory) {
+					Helper::deprecated('{{ TimberTerm() }}', '{{ get_term() }} or {{ get_terms() }}', '2.0.0');
+					return $termFactory->from( $term_id );
+				},
+				'options' => [
+					'deprecated' => true,
+				],
+			],
+			'User' => [
+				'callable' => function ($user_id) {
+					Helper::deprecated('{{ User() }}', '{{ get_user() }} or {{ get_users() }}', '2.0.0');
+					return Timber::get_user( $user_id );
+				},
+				'options' => [
+					'deprecated' => true,
+				],
+			],
+			'TimberUser' => [
+				'callable' => function ($user_id) {
+					Helper::deprecated('{{ TimberUser() }}', '{{ get_user() }} or {{ get_users() }}', '2.0.0');
+					return Timber::get_user( $user_id );
+				},
+				'options' => [
+					'deprecated' => true,
+				],
+			],
+			'shortcode' => [
+				'callable' => 'do_shortcode',
+			],
+			'bloginfo' => [
+				'callable' => 'bloginfo',
+			],
+			'__' => [
+				'callable' => '__',
+			],
+			'translate' => [
+				'callable' => 'translate',
+			],
+			'_e' => [
+				'callable' => '_e',
+			],
+			'_n' => [
+				'callable' => '_n',
+			],
+			'_x' => [
+				'callable' => '_x',
+			],
+			'_ex' => [
+				'callable' => '_ex',
+			],
+			'_nx' => [
+				'callable' => '_nx',
+			],
+			'_n_noop' => [
+				'callable' => '_n_noop',
+			],
+			'_nx_noop' => [
+				'callable' => '_nx_noop',
+			],
+			'translate_nooped_plural' => [
+				'callable' => 'translate_nooped_plural',
+			],
+		] );
+	}
 
 	/**
 	 * Adds Timber-specific functions to Twig.
@@ -37,180 +205,158 @@ class Twig {
 	 * @return \Twig\Environment
 	 */
 	public function add_timber_functions( $twig ) {
-		$twig->addFunction( new TwigFunction( 'action', function( $action_name, ...$args ) {
-			do_action_ref_array( $action_name, $args );
-		} ) );
 
-		$twig->addFunction(new TwigFunction('function', array(&$this, 'exec_function')));
-		$twig->addFunction(new TwigFunction('fn', array(&$this, 'exec_function')));
-
-		$twig->addFunction(new TwigFunction('shortcode', 'do_shortcode'));
-
-		/**
-		 * Timber object functions.
-		 */
-
-		// Posts
-		$twig->addFunction( new TwigFunction( 'get_post', [ Timber::class, 'get_post' ] ) );
-		$twig->addFunction( new TwigFunction( 'get_image', [ Timber::class, 'get_image' ] ) );
-		$twig->addFunction( new TwigFunction( 'get_attachment', [ Timber::class, 'get_attachment' ] ) );
-		$twig->addFunction( new TwigFunction( 'get_posts', [ Timber::class, 'get_posts' ] ) );
-		$twig->addFunction( new TwigFunction( 'get_attachment_by', [ Timber::class, 'get_attachment_by' ] ) );
-
-		// Terms
-		$twig->addFunction( new TwigFunction( 'get_term', [ Timber::class, 'get_term' ] ) );
-		$twig->addFunction( new TwigFunction( 'get_terms', [ Timber::class, 'get_terms' ] ) );
-
-		// Users
-		$twig->addFunction( new TwigFunction( 'get_user', [ Timber::class, 'get_user' ] ) );
-		$twig->addFunction( new TwigFunction( 'get_users', [ Timber::class, 'get_users' ] ) );
-
-		// Comments
-		$twig->addFunction( new TwigFunction( 'get_comment', [ Timber::class, 'get_comment' ] ) );
-		$twig->addFunction( new TwigFunction( 'get_comments', [ Timber::class, 'get_comments' ] ) );
-
-		/**
-		 * Deprecated Timber object functions.
-		 */
-
-		$postFactory = new PostFactory();
-
-		$twig->addFunction(new TwigFunction('Post', function( $post_id ) use ($postFactory) {
-			Helper::deprecated( '{{ Post() }}', '{{ get_post() }} or {{ get_posts() }}', '2.0.0' );
-			return $postFactory->from( $post_id );
-		} ) );
-		$twig->addFunction( new TwigFunction(
-			'TimberPost',
-			function( $post_id ) use ($postFactory) {
-				Helper::deprecated( '{{ TimberPost() }}', '{{ get_post() }} or {{ get_posts() }}', '2.0.0' );
-				return $postFactory->from( $post_id );
-			}
-		) );
-
-		$twig->addFunction(new TwigFunction('Image', function( $post_id ) use ($postFactory) {
-			Helper::deprecated( '{{ Image() }}', '{{ get_post() }} or {{ get_attachment_by() }}', '2.0.0' );
-			return $postFactory->from( $post_id );
-		} ) );
-		$twig->addFunction( new TwigFunction(
-			'TimberImage',
-			function( $post_id = false ) use ($postFactory) {
-				Helper::deprecated( '{{ TimberImage() }}', '{{ get_post() }} or {{ get_posts() }}', '2.0.0' );
-				return $postFactory->from( $post_id );
-			}
-		) );
-
-		$termFactory = new TermFactory();
-
-		$twig->addFunction( new TwigFunction(
-			'Term',
-			function( $term_id ) use ( $termFactory ) {
-				Helper::deprecated( '{{ Term() }}', '{{ get_term() }} or {{ get_terms() }}', '2.0.0' );
-				return $termFactory->from( $term_id );
-			}
-		) );
-		$twig->addFunction( new TwigFunction(
-			'TimberTerm',
-			function( $term_id ) use ( $termFactory ) {
-				Helper::deprecated( '{{ TimberTerm() }}', '{{ get_term() }} or {{ get_terms() }}', '2.0.0' );
-				return $termFactory->from( $term_id );
-			}
-		) );
-
-		$twig->addFunction(new TwigFunction('User', function( $post_id ) {
-			Helper::deprecated( '{{ User() }}', '{{ get_user() }} or {{ get_users() }}', '2.0.0' );
-			return Timber::get_user( $post_id );
-		} ) );
-		$twig->addFunction( new TwigFunction(
-			'TimberUser',
-			function( $user_id ) {
-				Helper::deprecated( '{{ TimberUser() }}', '{{ User() }}', '2.0.0' );
-				return Timber::get_user( $user_id );
-			}
-		) );
-
-		/* bloginfo and translate */
-		$twig->addFunction(new TwigFunction('bloginfo', 'bloginfo'));
-		$twig->addFunction(new TwigFunction('__', '__'));
-		$twig->addFunction(new TwigFunction('translate', 'translate'));
-		$twig->addFunction(new TwigFunction('_e', '_e'));
-		$twig->addFunction(new TwigFunction('_n', '_n'));
-		$twig->addFunction(new TwigFunction('_x', '_x'));
-		$twig->addFunction(new TwigFunction('_ex', '_ex'));
-		$twig->addFunction(new TwigFunction('_nx', '_nx'));
-		$twig->addFunction(new TwigFunction('_n_noop', '_n_noop'));
-		$twig->addFunction(new TwigFunction('_nx_noop', '_nx_noop'));
-		$twig->addFunction(new TwigFunction('translate_nooped_plural', 'translate_nooped_plural'));
+		foreach( $this->get_timber_functions() as $name => $function ) {
+			$twig->addFunction(
+				new TwigFunction(
+					$name,
+					$function['callable'],
+					isset($function['options']) ? $function['options'] : []
+				)
+			);
+		}
 
 		return $twig;
+	}
+
+	/**
+	 * Get Timber default filters
+	 *
+	 * @return array Default Timber filters
+	 */
+	public function get_timber_filters() {
+		return apply_filters( 'timber/twig/default_filters', [
+			/* image filters */
+			'resize' => [
+				'callable' => ['Timber\ImageHelper', 'resize'],
+			],
+			'retina' => [
+				'callable' => ['Timber\ImageHelper', 'retina_resize'],
+			],
+			'letterbox' => [
+				'callable' => ['Timber\ImageHelper', 'letterbox'],
+			],
+			'tojpg' => [
+				'callable' => ['Timber\ImageHelper', 'img_to_jpg'],
+			],
+			'towebp' => [
+				'callable' => ['Timber\ImageHelper', 'img_to_webp'],
+			],
+
+			/* debugging filters */
+			'get_class' => [
+				'callable' => function( $obj ) {
+					Helper::deprecated( '{{ my_object | get_class }}', "{{ function('get_class', my_object) }}", '2.0.0' );
+					return get_class( $obj );
+				},
+				'options' => [
+					'deprecated' => true,
+				],
+			],
+			'print_r' => [
+				'callable' => function( $arr ) {
+					Helper::deprecated( '{{ my_object | print_r }}', '{{ dump(my_object) }}', '2.0.0' );
+					return print_r($arr, true);
+				},
+				'options' => [
+					'deprecated' => true,
+				],
+			],
+
+			/* other filters */
+			'stripshortcodes' => [
+				'callable' => 'strip_shortcodes',
+			],
+			'array' => [
+				'callable' => [$this, 'to_array'],
+			],
+			'excerpt' => [
+				'callable' => 'wp_trim_words',
+			],
+			'excerpt_chars' => [
+				'callable' => ['Timber\TextHelper', 'trim_characters'],
+			],
+			'function' => [
+				'callable' => [$this, 'exec_function'],
+			],
+			'pretags' => [
+				'callable' => [$this, 'twig_pretags'],
+			],
+			'sanitize' => [
+				'callable' => 'sanitize_title',
+			],
+			'shortcodes' => [
+				'callable' => 'do_shortcode',
+			],
+			'wpautop' => [
+				'callable' => 'wpautop',
+			],
+			'list' => [
+				'callable' => [$this, 'add_list_separators'],
+			],
+			'pluck' => [
+				'callable' => ['Timber\Helper', 'pluck'],
+			],
+			'wp_list_filter' => [
+				'callable' => ['Timber\Helper', 'wp_list_filter'],
+			],
+
+			'relative' => [
+				'callable' => function( $link ) {
+					return URLHelper::get_rel_url($link, true);
+				},
+			],
+
+			/**
+			 * Date and Time filters.
+			 *
+			 * @todo copy this formatting to other functions
+			 */
+			'date' => [
+				'callable' => [ $this, 'twig_date_format_filter' ],
+				'options' => [ 'needs_environment' => true ],
+			],
+			'time_ago' => [
+				'callable' => ['Timber\DateTimeHelper', 'time_ago'],
+			],
+			'truncate' => [
+				'callable' => function( $text, $len ) {
+					return TextHelper::trim_words($text, $len);
+				},
+			],
+
+			/* actions and filters */
+			'apply_filters' => [
+				'callable' => function() {
+					$args = func_get_args();
+					$tag = current(array_splice($args, 1, 1));
+
+					return apply_filters_ref_array($tag, $args);
+				},
+			],
+		]);
+
+
 	}
 
 	/**
 	 * Adds filters to Twig.
 	 *
 	 * @param \Twig\Environment $twig The Twig Environment.
+	 *
 	 * @return \Twig\Environment
 	 */
 	public function add_timber_filters( $twig ) {
-		/* image filters */
-		$twig->addFilter(new TwigFilter('resize', array('Timber\ImageHelper', 'resize')));
-		$twig->addFilter(new TwigFilter('retina', array('Timber\ImageHelper', 'retina_resize')));
-		$twig->addFilter(new TwigFilter('letterbox', array('Timber\ImageHelper', 'letterbox')));
-		$twig->addFilter(new TwigFilter('tojpg', array('Timber\ImageHelper', 'img_to_jpg')));
-		$twig->addFilter(new TwigFilter('towebp', array('Timber\ImageHelper', 'img_to_webp')));
 
-		/* debugging filters */
-		$twig->addFilter(new TwigFilter('get_class', function( $obj ) {
-			Helper::deprecated( '{{ my_object | get_class }}', "{{ function('get_class', my_object) }}", '2.0.0' );
-			return get_class( $obj );
-		} ));
-		$twig->addFilter(new TwigFilter('print_r', function( $arr ) {
-			Helper::deprecated( '{{ my_object | print_r }}', '{{ dump(my_object) }}', '2.0.0' );
-			return print_r($arr, true);
-		} ));
-
-		/* other filters */
-		$twig->addFilter(new TwigFilter('stripshortcodes', 'strip_shortcodes'));
-		$twig->addFilter(new TwigFilter('array', array($this, 'to_array')));
-		$twig->addFilter(new TwigFilter('excerpt', 'wp_trim_words'));
-		$twig->addFilter(new TwigFilter('excerpt_chars', array('Timber\TextHelper', 'trim_characters')));
-		$twig->addFilter(new TwigFilter('function', array($this, 'exec_function')));
-		$twig->addFilter(new TwigFilter('pretags', array($this, 'twig_pretags')));
-		$twig->addFilter(new TwigFilter('sanitize', 'sanitize_title'));
-		$twig->addFilter(new TwigFilter('shortcodes', 'do_shortcode'));
-		$twig->addFilter(new TwigFilter('wpautop', 'wpautop'));
-		$twig->addFilter(new TwigFilter('list', array($this, 'add_list_separators')));
-
-		$twig->addFilter(new TwigFilter('pluck', array('Timber\Helper', 'pluck')));
-
-		$twig->addFilter(new TwigFilter('wp_list_filter', array('Timber\Helper', 'wp_list_filter')));
-
-		$twig->addFilter(new TwigFilter('relative', function( $link ) {
-					return URLHelper::get_rel_url($link, true);
-				} ));
-
-		/**
-		 * Date and Time filters.
-		 *
-		 * @todo copy this formatting to other functions
-		 */
-		$twig->addFilter(new TwigFilter(
-			'date',
-			[ $this, 'twig_date_format_filter' ],
-			[ 'needs_environment' => true ]
-		) );
-		$twig->addFilter(new TwigFilter('time_ago', array('Timber\DateTimeHelper', 'time_ago')));
-
-		$twig->addFilter(new TwigFilter('truncate', function( $text, $len ) {
-					return TextHelper::trim_words($text, $len);
-				} ));
-
-		/* actions and filters */
-		$twig->addFilter(new TwigFilter('apply_filters', function() {
-					$args = func_get_args();
-					$tag = current(array_splice($args, 1, 1));
-
-					return apply_filters_ref_array($tag, $args);
-				} ));
+		foreach( $this->get_timber_filters() as $name => $function ) {
+			$twig->addFilter(
+				new TwigFilter(
+					$name,
+					$function['callable'],
+					isset($function['options']) ? $function['options'] : []
+				)
+			);
+		}
 
 		return $twig;
 	}

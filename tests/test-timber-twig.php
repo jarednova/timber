@@ -333,4 +333,26 @@
 				$str
 			);
 		}
+
+		/**
+		 * @expectedException \Twig\Error\SyntaxError
+		 */
+		function testRemoveADefaultFunction() {
+			add_filter('timber/twig/default_functions', function($functions) {
+				unset($functions['shortcode']);
+				return $functions;
+			});
+			Timber::compile_string( "{{ text|shortcode }}", ['text' => 'A function has been removed'] );
+		}
+
+		/**
+		 * @expectedException \Twig\Error\SyntaxError
+		 */
+		function testRemoveADefaultFilter() {
+			add_filter('timber/twig/default_filters', function($filters) {
+				unset($filters['wpautop']);
+				return $filters;
+			});
+			Timber::compile_string( "{{ text|wpautop }}", ['text' => 'A filter has been removed'] );
+		}
 	}
