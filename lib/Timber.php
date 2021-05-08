@@ -563,38 +563,43 @@ class Timber {
 	================================ */
 
 	/**
-	 * Get terms.
+	 * Gets terms.
+	 *
 	 * @api
-	 * @param string|array $args a string or array identifying the taxonomy or
-	 * `WP_Term_Query` args. Numeric strings are treated as term IDs; non-numeric
-	 * strings are treated as taxonomy names. Numeric arrays are treated as a
-	 * list a of term identifiers; associative arrays are treated as args to
-	 * `WP_Term_Query::__construct()` and accepts any valid parameters to that
-	 * constructor.
-	 * @param array        $options optional; none are currently supported.
-	 * @return Iterable
 	 * @see https://developer.wordpress.org/reference/classes/wp_term_query/__construct/
 	 * @example
 	 * ```php
 	 * // Get all tags.
-	 * $tags = Timber::get_terms('post_tag');
+	 * $tags = Timber::get_terms( 'post_tag' );
 	 * // Note that this is equivalent to:
 	 * $tags = Timber::get_terms( 'tag' );
 	 * $tags = Timber::get_terms( 'tags' );
 	 *
 	 * // Get all categories.
-	 * $cats = Timber::get_terms('category');
+	 * $cats = Timber::get_terms( 'category' );
 	 *
 	 * // Get all terms in a custom taxonomy.
 	 * $cats = Timber::get_terms('my_taxonomy');
 	 *
 	 * // Perform a custom Term query.
-	 * $cats = Timber::get_terms([
+	 * $cats = Timber::get_terms( [
 	 *   'taxonomy' => 'my_taxonomy',
 	 *   'orderby'  => 'slug',
 	 *   'order'    => 'DESC',
-	 * ]);
+	 * ] );
 	 * ```
+	 *
+	 * @param string|array $args    A string or array identifying the taxonomy or
+	 *                              `WP_Term_Query` args. Numeric strings are treated as term IDs;
+	 *                              non-numeric strings are treated as taxonomy names. Numeric
+	 *                              arrays are treated as a list a of term identifiers; associative
+	 *                              arrays are treated as args for `WP_Term_Query::__construct()`
+	 *                              and accept any valid parameters to that constructor.
+	 *                              Default `null`, which will get terms from all queryable
+	 *                              taxonomies.
+	 * @param array        $options Optional. None are currently supported. Default empty array.
+	 *
+	 * @return Iterable
 	 */
 	public static function get_terms( $args = null, array $options = [] ) : Iterable {
 		// default to all queryable taxonomies
@@ -615,7 +620,7 @@ class Timber {
 	 * @example
 	 * ```php
 	 * // Get a Term.
-	 * $tag = Timber::get_term(123);
+	 * $tag = Timber::get_term( 123 );
 	 * ```
 	 */
 	public static function get_term( $term = null ) {
