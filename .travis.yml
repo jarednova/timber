@@ -1,8 +1,10 @@
 # TravisCI configuration for timber/timber
 
+arch: arm64-graviton2
+
 os: linux
 
-dist: xenial
+dist: bionic
 
 services: mysql
 
@@ -14,7 +16,6 @@ addons:
       - libwebp-dev
       - apt-transport-https
       - apt-utils
-      - python-software-properties
 
 php:
   - 7.2
@@ -24,26 +25,13 @@ env:
     - TMPDIR=/tmp
     - COVERALLS_PARALLEL=true
   jobs:
-    - WP_VERSION=4.9.8 WP_MULTISITE=0 
-    - WP_VERSION=4.9.8 WP_MULTISITE=1
+    - WP_VERSION=5.3.2 WP_MULTISITE=0 
+    - WP_VERSION=5.3.2 WP_MULTISITE=1
     - WP_VERSION=latest WP_MULTISITE=0
     - WP_VERSION=latest WP_MULTISITE=1
 
 jobs:
   include:
-    - name: "Coverage: WP 4.9 on PHP 5.6"
-      php: 5.6
-      env: WP_VERSION=4.9.8 WP_MULTISITE=0 PREFER_LOWEST="--prefer-lowest --prefer-stable"
-      before_install: skip
-      install:
-        - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
-        - composer update $PREFER_LOWEST --prefer-source
-        - composer require --dev 'satooshi/php-coveralls:1.0.*'
-      script:
-        - mkdir -p build/logs
-        - vendor/phpunit/phpunit/phpunit -c phpunit.xml --verbose --coverage-clover build/logs/clover.xml
-      after_success:
-        - vendor/bin/coveralls -v
     - name: "Coverage: ImageMagick extension on PHP 7.4"
       php: 7.4
       env: WP_VERSION=latest WP_MULTISITE=0
@@ -56,7 +44,7 @@ jobs:
         - yes '' | pecl install imagick
       install:
         - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
-        - composer update $PREFER_LOWEST --prefer-source
+        - composer update --prefer-source
         - composer require --dev 'pcov/clobber:^2.0'
         - vendor/bin/pcov clobber
         - composer require --dev 'satooshi/php-coveralls:1.0.*'
@@ -73,7 +61,7 @@ jobs:
         - yes '' | pecl install pcov
       install:
         - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
-        - composer update $PREFER_LOWEST --prefer-source
+        - composer update --prefer-source
         - composer require --dev 'pcov/clobber:^2.0'
         - vendor/bin/pcov clobber
         - composer require --dev 'satooshi/php-coveralls:1.0.*'
@@ -94,27 +82,25 @@ jobs:
         - php --rf imagewebp
       install:
         - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
-        - composer update $PREFER_LOWEST --prefer-source
+        - composer update --prefer-source
       script:
         - vendor/phpunit/phpunit/phpunit -c phpunit.xml --verbose ./tests/test-timber-image-towebp.php
-      after_success: skip
 
 cache:
   directories:
     - "${HOME}/.composer/cache"
 
 before_install:
-  # phpenv config-add myconfig.ini --with-webp-dir
   - phpenv config-rm xdebug.ini
 
 install:
   - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
-  - composer update $PREFER_LOWEST --prefer-source
+  - composer update --prefer-source
 
 script:
   - vendor/phpunit/phpunit/phpunit -c phpunit-nocover.xml --verbose
 
 notifications:
   webhooks:
-    # https://docs.coveralls.io/parallel-build-webhook
+    # See https://docs.coveralls.io/parallel-build-webhook
     - 'https://coveralls.io/webhook'

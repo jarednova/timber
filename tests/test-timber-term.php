@@ -1,62 +1,59 @@
 <?php
 
+use Timber\Post;
+
+class TermTestPage extends Post {}
+
+	/**
+	* @group terms-api
+	*/
 	class TestTimberTerm extends Timber_UnitTestCase {
-		
+
 		function testTermFrom() {
 			register_taxonomy('baseball', array('post'));
 			register_taxonomy('hockey', array('post'));
-			$term_id = $this->factory->term->create(array('name' => 'Rangers', 'taxonomy' => 'baseball'));
-			$term_id = $this->factory->term->create(array('name' => 'Cardinals', 'taxonomy' => 'baseball'));
-			$term_id = $this->factory->term->create(array('name' => 'Rangers', 'taxonomy' => 'hockey'));
-			$baseball_teams = Timber\Term::from(get_terms(array('taxonomy' => 'baseball', 'hide_empty' => false)), 'baseball');
-			$this->assertEquals(2, count($baseball_teams));
-			$this->assertEquals('Cardinals', $baseball_teams[0]->name());
+			$this->factory->term->create(['name' => 'Rangers',   'taxonomy' => 'baseball']);
+			$this->factory->term->create(['name' => 'Cardinals', 'taxonomy' => 'baseball']);
+			$this->factory->term->create(['name' => 'Rangers',   'taxonomy' => 'hockey']);
+
+			$wp_terms       = get_terms([
+				'taxonomy'    => 'baseball',
+				'hide_empty'  => false,
+			]);
+			$baseball_teams = Timber::get_terms($wp_terms);
+
+			$this->assertCount(2, $baseball_teams);
+
+			$this->assertEquals('Cardinals', $baseball_teams[0]->title());
+			$this->assertEquals('Rangers',   $baseball_teams[1]->title());
 		}
 
-		function testConstructorWithClass() {
-			register_taxonomy('arts', array('post'));
-
-			$term_id = $this->factory->term->create(array('name' => 'Zong', 'taxonomy' => 'post_tag'));
-			$term = new \Timber\Term($term_id);
-
-			$template = '{% set zp_term = Term("'.$term_id.'", "Arts") %}{{ zp_term.name }} {{ zp_term.taxonomy }}';
-			$string = Timber::compile_string($template);
-			$this->assertEquals('Zong post_tag', $string);
-
-			$template = '{% set zp_term = TimberTerm('.$term_id.', "Arts") %}{{ zp_term.foobar }}';
-			$string = Timber::compile_string($template);
-			$this->assertEquals('Zebra', $string);
+		/**
+		 * @expectedException InvalidArgumentException
+		 */
+		function testTermFromInvalidObject() {
+			register_taxonomy('baseball', array('post'));
+			$term_id = $this->factory->term->create(['name' => 'Cardinals', 'taxonomy' => 'baseball']);
+			$post_id = $this->factory->post->create(['post_title' => 'Test Post']);
+			$post = get_post($post_id);
+			$test = Timber::get_terms($post);
 		}
 
-		function testConstructorWithClassAndTaxonomy() {
-			register_taxonomy('arts', array('post'));
-
-			$term_id = $this->factory->term->create(array('name' => 'Zong', 'taxonomy' => 'arts'));
-			$term = new \Timber\Term($term_id);
-
-			$template = '{% set zp_term = Term("'.$term_id.'", "arts", "Arts") %}{{ zp_term.name }} {{ zp_term.taxonomy }}';
-			$string = Timber::compile_string($template);
-			$this->assertEquals('Zong arts', $string);
-
-			$template = '{% set zp_term = TimberTerm('.$term_id.', "Arts") %}{{ zp_term.foobar }}';
-			$string = Timber::compile_string($template);
-			$this->assertEquals('Zebra', $string);
-		}
-
-		function testConstructor() {
+		function testGetTerm() {
 			register_taxonomy('arts', array('post'));
 
 			$term_id = $this->factory->term->create(array('name' => 'Zong', 'taxonomy' => 'arts'));
-			$term = new TimberTerm($term_id, 'arts');
-			$this->assertEquals('Zong', $term->name());
-			$template = '{% set zp_term = TimberTerm("'.$term->ID.'", "arts") %}{{ zp_term.name }}';
+			// @todo #2087 get this to work w/o $taxonomy param
+			$term = Timber::get_term($term_id, '');
+			$this->assertEquals('Zong', $term->title());
+			$template = '{% set zp_term = get_term("'.$term->ID.'", "arts") %}{{ zp_term.name }}';
 			$string = Timber::compile_string($template);
 			$this->assertEquals('Zong', $string);
 		}
 
 		function testTerm() {
 			$term_id = $this->factory->term->create();
-			$term = new TimberTerm($term_id);
+			$term = Timber::get_term($term_id);
 			$this->assertEquals('Timber\Term', get_class($term));
 		}
 
@@ -64,20 +61,14 @@
 			$term_id = $this->factory->term->create(array('name' => 'Famous Commissioners'));
 			$term_data = get_term($term_id, 'post_tag');
 			$this->assertTrue( in_array( get_class($term_data), array('WP_Term', 'stdClass') ) );
-			$term = new TimberTerm($term_id);
-			$this->assertEquals('Famous Commissioners', $term->name());
+			$term = Timber::get_term($term_id);
+			$this->assertEquals('Famous Commissioners', $term->title());
 			$this->assertEquals('Timber\Term', get_class($term));
-		}
-
-		function testTermConstructWithSlug() {
-			$term_id = $this->factory->term->create(array('name' => 'New England Patriots'));
-			$term = new TimberTerm('new-england-patriots');
-			$this->assertEquals($term->ID, $term_id);
 		}
 
 		function testTermToString() {
 			$term_id = $this->factory->term->create(array('name' => 'New England Patriots'));
-			$term = new TimberTerm('new-england-patriots');
+			$term = Timber::get_term($term_id);
 			$str = Timber::compile_string('{{term}}', array('term' => $term));
 			$this->assertEquals('New England Patriots', $str);
 		}
@@ -85,204 +76,297 @@
 		function testTermDescription() {
 			$desc = 'An honest football team';
 			$term_id = $this->factory->term->create(array('name' => 'New England Patriots', 'description' => $desc));
-			$term = new TimberTerm($term_id, 'post_tag');
+			$term = Timber::get_term($term_id, 'post_tag');
 			$this->assertEquals($desc, $term->description());
-		}
-
-		function testTermConstructWithName() {
-			$term_id = $this->factory->term->create(array('name' => 'St. Louis Cardinals'));
-			$term = new TimberTerm('St. Louis Cardinals');
-			$this->assertNull($term->ID);
 		}
 
 		function testTermInitObject() {
 			$term_id = $this->factory->term->create();
 			$term = get_term($term_id, 'post_tag');
-			$term = new TimberTerm($term);
+			$term = Timber::get_term($term);
 			$this->assertEquals($term->ID, $term_id);
 		}
 
 		function testTermLink() {
 			$term_id = $this->factory->term->create();
-			$term = new TimberTerm($term_id);
+			$term = Timber::get_term($term_id);
 			$this->assertContains('http://', $term->link());
-			$this->assertContains('http://', $term->get_link());
 		}
 
 		function testTermPath() {
 			$term_id = $this->factory->term->create();
-			$term = new TimberTerm($term_id);
+			$term = Timber::get_term($term_id);
 			$this->assertFalse(strstr($term->path(), 'http://'));
-			$this->assertFalse(strstr($term->get_path(), 'http://'));
 		}
 
-		function testGetPostsWithPostTypesString() {
-			register_post_type('portfolio', array('taxonomies' => array('post_tag'), 'public' => true));
-			$term_id = $this->factory->term->create(array('name' => 'Zong'));
-			$posts = $this->factory->post->create_many(3, array('post_type' => 'post', 'tags_input' => 'zong') );
-			$posts = $this->factory->post->create_many(5, array('post_type' => 'portfolio', 'tags_input' => 'zong') );
-			$term = new TimberTerm($term_id);
-			$posts_gotten = $term->posts('posts_per_page=4');
-			$this->assertEquals(4, count($posts_gotten));
 
-			$posts_gotten = $term->posts(array('posts_per_page' => 7));
-			$this->assertEquals(7, count($posts_gotten));
-		}
+		/*
+		 * Term::posts() tests
+		 */
 
-		function testGetPostsWithAnyAndCustomTax() {
+		function testPostsDefault() {
 			register_post_type('portfolio', array('taxonomies' => array('arts'), 'public' => true));
-			register_taxonomy('arts', array('portfolio'));
+			register_taxonomy('arts', array('portfolio', 'post'));
 
+			// Create a term, and some posts to assign it to.
 			$term_id = $this->factory->term->create(array('name' => 'Zong', 'taxonomy' => 'arts'));
-			$posts = $this->factory->post->create_many(5, array('post_type' => 'portfolio' ));
-			$term = new TimberTerm($term_id);
+
+			// Create 12 posts total.
+			// NOTE: Neither post_type has enough to satisfy the assertion below on its own,
+			// but together they should exceed the default posts_per_page and we should get
+			// exactly posts_per_page (10) back.
+			$posts = array_merge(
+				$this->factory->post->create_many(5),
+				$this->factory->post->create_many(7, ['post_type' => 'portfolio'])
+			);
+
+			// assign the term to each of our new posts
+			foreach ($posts as $post_id) {
+				wp_set_object_terms($post_id, $term_id, 'arts', true);
+			}
+
+			$other_id    = $this->factory->term->create(array('name' => 'Other', 'taxonomy' => 'arts'));
+			$other_posts = $this->factory->post->create_many(10);
+			foreach ($other_posts as $id) {
+				wp_set_object_terms($id, $other_id, 'arts', true);
+			}
+
+			$term = Timber::get_term($term_id);
+
+			// Expect the default posts_per_page, with posts of all types.
+			$this->assertCount(10, $term->posts());
+			// Passing an empty array should behave exactly the same.
+			$this->assertCount(10, $term->posts([]));
+		}
+
+		function testPostsDefaultPostType() {
+			register_post_type('portfolio', array('taxonomies' => array('arts'), 'public' => true));
+			register_taxonomy('arts', array('portfolio', 'post'));
+
+			// Create a term, and some posts to assign it to.
+			$term_id = $this->factory->term->create(array('name' => 'Zong', 'taxonomy' => 'arts'));
+
+			// Create 12 posts total.
+			// NOTE: Neither post_type has enough to satisfy the assertion below on its own,
+			// but together they should exceed the 8 we ask for so we should get exactly 8 back.
+			// This is because, according to the docs, post_type defaults to "any" when using
+			// tax_query.
+			// https://developer.wordpress.org/reference/classes/WP_Query/parse_query/
+			$posts = array_merge(
+				$this->factory->post->create_many(5),
+				$this->factory->post->create_many(7, ['post_type' => 'portfolio'])
+			);
+
+			// assign the term to each of our new posts
+			foreach ($posts as $post_id) {
+				wp_set_object_terms($post_id, $term_id, 'arts', true);
+			}
+
+			$term = Timber::get_term($term_id);
+
+			// Expect exactly the count we asked for.
+			$this->assertCount(8, $term->posts([
+				'posts_per_page' => 8,
+			]));
+		}
+
+		function testPostsWithPostTypeQuery() {
+			register_post_type('portfolio', array('taxonomies' => array('arts'), 'public' => true));
+			register_taxonomy('arts', array('portfolio', 'post'));
+
+			// Create a term, and some posts to assign it to.
+			$term_id = $this->factory->term->create(array('name' => 'Zong', 'taxonomy' => 'arts'));
+
+			// Create 12 posts total. But we should only get 7 back below even though posts_per_page
+			// defaults to 10, because we limit by post_type.
+			$posts = array_merge(
+				$this->factory->post->create_many(5),
+				$this->factory->post->create_many(7, ['post_type' => 'portfolio'])
+			);
+
+			// assign the term to each of our new posts
 			foreach($posts as $post_id) {
 				wp_set_object_terms($post_id, $term_id, 'arts', true);
 			}
-			$terms = Timber::get_terms('arts');
-			$template = '{% for term in terms %}{% for post in term.posts %}{{post.title}}{% endfor %}{% endfor %}';
-			$template = '{% for term in terms %}{{term.posts|length}}{% endfor %}';
-			$str = Timber::compile_string($template, array('terms' => $terms));
-			$this->assertEquals('5', $str);
+
+			$term = Timber::get_term($term_id);
+
+			// Expect the default posts_per_page, with posts of all types.
+			$this->assertCount(7, $term->posts([
+				'post_type' => 'portfolio',
+			]));
 		}
 
-		function testGetPostsOld() {
-			$term_id = $this->factory->term->create();
-			$posts = array();
-			$posts[] = $this->factory->post->create();
-			$posts[] = $this->factory->post->create();
-			$posts[] = $this->factory->post->create();
-			foreach($posts as $post_id){
-				wp_set_object_terms($post_id, $term_id, 'post_tag', true);
-			}
-			$term = new TimberTerm($term_id);
-			$gotten_posts = $term->get_posts();
-			$this->assertEquals(count($posts), count($gotten_posts));
-		}
+		function testPostsWithTaxQuery() {
+			register_post_type('portfolio', array('taxonomies' => array('arts'), 'public' => true));
+			register_taxonomy('arts', array('portfolio', 'post'));
 
-		function testGetPostsAsPageOld() {
-			$term_id = $this->factory->term->create();
-			$posts = array();
-			$posts[] = $this->factory->post->create();
-			$posts[] = $this->factory->post->create();
-			$posts[] = $this->factory->post->create();
-			foreach($posts as $post_id){
-				set_post_type($post_id, 'page');
-				wp_set_object_terms($post_id, $term_id, 'post_tag', true);
-			}
-			$term = new TimberTerm($term_id);
-			$gotten_posts = $term->posts(count($posts), 'page');
-			$this->assertEquals(count($posts), count($gotten_posts));
-			$gotten_posts = $term->posts(count($posts), 'any');
-			$this->assertEquals(count($posts), count($gotten_posts));
-			$gotten_posts = $term->posts(count($posts), 'post');
-			$this->assertEquals(0, count($gotten_posts));
-		}
+			// Create a term, and some posts to assign it to.
+			$term_id = $this->factory->term->create(['taxonomy' => 'arts']);
 
-		function testGetPostsNew() {
-			require_once('php/timber-post-subclass.php');
-			$term_id = $this->factory->term->create();
-			$posts = array();
-			$posts[] = $this->factory->post->create();
-			$posts[] = $this->factory->post->create();
-			$posts[] = $this->factory->post->create();
-			foreach($posts as $post_id){
-				set_post_type($post_id, 'page');
-				wp_set_object_terms($post_id, $term_id, 'post_tag', true);
+			// Create 12 posts total.
+			// NOTE: Neither post_type has enough to satisfy the assertion below on its own,
+			// but together they should exceed the 8 we ask for so we should get exactly 8 back.
+			// This is because, according to the docs, post_type defaults to "any" when using
+			// tax_query.
+			// https://developer.wordpress.org/reference/classes/WP_Query/parse_query/
+			$posts = array_merge(
+				$this->factory->post->create_many(5),
+				$this->factory->post->create_many(7, ['post_type' => 'portfolio'])
+			);
+
+			// assign the term to each of our new posts
+			foreach ($posts as $post_id) {
+				wp_set_object_terms($post_id, $term_id, 'arts', true);
 			}
 
-			$term = new TimberTerm($term_id);
+			// Tag one post and one portfolio with a special crafts term, too.
+			register_taxonomy('crafts', array('portfolio', 'post'));
+			$craft_id = $this->factory->term->create(['taxonomy' => 'crafts']);
+			wp_set_object_terms($posts[0], $craft_id, 'crafts', true);
+			wp_set_object_terms($posts[5], $craft_id, 'crafts', true);
 
-			$gotten_posts = $term->get_posts('post_type=page');
-			$this->assertEquals(count($posts), count($gotten_posts));
+			$term = Timber::get_term($term_id);
 
-			$gotten_posts = $term->get_posts('post_type=page', 'TimberPostSubclass');
-			$this->assertEquals(count($posts), count($gotten_posts));
-			$this->assertInstanceOf( 'TimberPostSubclass', $gotten_posts[0] );
-
-			$gotten_posts = $term->get_posts(array('post_type' => 'page'), 'TimberPostSubclass');
-			$this->assertInstanceOf( 'TimberPostSubclass', $gotten_posts[0] );
-			$this->assertEquals(count($posts), count($gotten_posts));
-		}
-
-		function testPostsWithCustomPostType() {
-			$term_id = $this->factory->term->create();
-			$posts   = array();
-			$posts[] = $this->factory->post->create();
-			$posts[] = $this->factory->post->create();
-			$posts[] = $this->factory->post->create();
-
-			foreach ( $posts as $post_id ) {
-				set_post_type( $post_id, 'page' );
-				wp_set_object_terms( $post_id, $term_id, 'post_tag', true );
-			}
-
-			$term = new Timber\Term( $term_id );
-
-			$term_posts = $term->posts( [
-				'posts_per_page' => 2,
-				'orderby'        => 'menu_order',
-			], 'page' );
-
-			$this->assertEquals( 'Timber\Post', get_class( $term_posts[0] ) );
-			$this->assertEquals( 'page', $term_posts[0]->post_type );
-			$this->assertEquals( 2, count( $term_posts ) );
-		}
-
-		function testPostsWithCustomPostTypeAndCustomClass() {
-			require_once 'php/timber-post-subclass.php';
-
-			$term_id = $this->factory->term->create();
-			$posts   = array();
-			$posts[] = $this->factory->post->create();
-			$posts[] = $this->factory->post->create();
-			$posts[] = $this->factory->post->create();
-
-			foreach ( $posts as $post_id ) {
-				set_post_type( $post_id, 'page' );
-				wp_set_object_terms( $post_id, $term_id, 'post_tag', true );
-			}
-
-			$term = new Timber\Term( $term_id );
-
-			$term_posts = $term->posts( [
-				'posts_per_page' => 2,
-				'orderby'        => 'menu_order',
-			], 'page', 'TimberPostSubclass' );
-
-			$this->assertInstanceOf( 'TimberPostSubclass', $term_posts[0] );
-			$this->assertEquals( 'page', $term_posts[0]->post_type );
-			$this->assertEquals( 2, count( $term_posts ) );
+			// Expect the intersection of arts & crafts.
+			$this->assertCount(2, $term->posts([
+				'tax_query'    => [
+					[
+						'field'    => 'id',
+						'terms'    => $craft_id,
+						'taxonomy' => 'crafts',
+					],
+					// This should get overridden; we don't want users to be able to
+					// override the Term we're querying for.
+					'relation'     => 'OR',
+				],
+			]));
 		}
 
 		/**
-		 * This test uses the logic described in https://github.com/timber/timber/issues/799#issuecomment-192445207.
+		 * @expectedIncorrectUsage Passing a query string to Term::posts()
 		 */
-		function testPostsWithCustomPostTypePageAndCustomClass() {
-			require_once 'php/timber-post-subclass.php';
-			require_once 'php/timber-post-subclass-page.php';
+		function testGetPostsWithQueryString() {
+			register_post_type('portfolio', array('taxonomies' => array('post_tag'), 'public' => true));
+			$term_id = $this->factory->term->create(array('name' => 'Zong'));
+			$this->factory->post->create_many(3, array('post_type' => 'post', 'tags_input' => 'zong') );
+			$this->factory->post->create_many(5, array('post_type' => 'portfolio', 'tags_input' => 'zong') );
 
+			// Count is mismatched because string-based queries default to a post_type of "post".
+			$term = Timber::get_term($term_id);
+			$this->assertFalse($term->posts('posts_per_page=8'));
+		}
+
+		/**
+		 * @expectedDeprecated Passing post_type_or_class
+		 * This test *partially* honors the logic described in
+		 * https://github.com/timber/timber/issues/799#issuecomment-192445207,
+		 * although that behavior is not deprecated.
+		 */
+		function testGetPostsWithPostTypeArg() {
+			register_post_type('portfolio', array('taxonomies' => array('post_tag'), 'public' => true));
+			$term_id = $this->factory->term->create(array('name' => 'Zong'));
+			$this->factory->post->create_many(3, array('post_type' => 'post', 'tags_input' => 'zong') );
+			$this->factory->post->create_many(5, array('post_type' => 'portfolio', 'tags_input' => 'zong') );
+
+			$term = Timber::get_term($term_id);
+			$this->assertCount(3, $term->posts([
+				'orderby' => 'menu_order',
+			], 'post'));
+		}
+
+		/**
+		 * @expectedIncorrectUsage Passing a post class
+		 */
+		function testGetPostsWithPostClassArg() {
+			register_post_type('portfolio', array('taxonomies' => array('post_tag'), 'public' => true));
+			$term_id = $this->factory->term->create(array('name' => 'Zong'));
+			$this->factory->post->create_many(3, array('post_type' => 'post', 'tags_input' => 'zong') );
+			$this->factory->post->create_many(5, array('post_type' => 'portfolio', 'tags_input' => 'zong') );
+
+			$term = Timber::get_term($term_id);
+			$this->assertCount(3, $term->posts([
+				'orderby' => 'menu_order',
+			], null, 'INCORRECT'));
+		}
+
+		/**
+		 * @expectedDeprecated {{ term.get_posts }}
+		 */
+		function testGetPostsDeprecated() {
+			$term_id = $this->factory->term->create(['name' => 'Rad']);
+			$posts = $this->factory->post->create_many(3, [
+				'tags_input' => 'rad',
+			]);
+			$term = Timber::get_term($term_id);
+
+			$this->assertCount(3, $term->get_posts());
+		}
+
+		function testPostsWithPostCount() {
 			$term_id = $this->factory->term->create();
-			$posts   = array();
-			$posts[] = $this->factory->post->create();
-			$posts[] = $this->factory->post->create();
-			$posts[] = $this->factory->post->create();
-
-			foreach ( $posts as $post_id ) {
-				set_post_type( $post_id, 'page' );
+			// Assign some pages to our post_tag Term.
+			$page_ids = $this->factory->post->create_many(3, [
+				'post_type' => 'page',
+				'post_date' => '2020-01-01',
+			]);
+			// Create some posts too.
+			$post_ids = $this->factory->post->create_many(3, [
+				'post_date' => '2019-01-01',
+			]);
+			// Tag all posts.
+			foreach ( array_merge($page_ids, $post_ids) as $post_id ) {
 				wp_set_object_terms( $post_id, $term_id, 'post_tag', true );
 			}
 
-			$term = new Timber\Term( $term_id );
+			$this->register_post_classmap_temporarily([
+				'page' => TermTestPage::class,
+			]);
+
+			// Get the first four posts from this term.
+			$term_posts = Timber::get_term( $term_id )->posts( 4 );
+
+			$this->assertCount( 4, $term_posts );
+
+			// Pages should come first due to later publish dates.
+			$this->assertInstanceOf( TermTestPage::class, $term_posts[0] );
+			$this->assertInstanceOf( TermTestPage::class, $term_posts[1] );
+			$this->assertInstanceOf( TermTestPage::class, $term_posts[2] );
+			$this->assertInstanceOf( Post::class, $term_posts[3] );
+		}
+
+		function testPostsWithExtraQueryArgs() {
+			$term_id = $this->factory->term->create(['name' => 'Rad']);
+
+			$posts = [
+				$this->factory->post->create([
+					'post_title' => 'Earlier',
+					'post_date'  => '2020-01-01',
+					'tags_input' => 'rad',
+				]),
+				$this->factory->post->create([
+					'post_title' => 'Later',
+					'post_date'  => '2020-03-01',
+					'tags_input' => 'rad',
+				]),
+				$this->factory->post->create([
+					'post_title' => 'Much Later',
+					'post_date'  => '2020-08-01',
+					'tags_input' => 'rad',
+				]),
+			];
+
+			$term = Timber::get_term( $term_id );
 
 			$term_posts = $term->posts( [
 				'posts_per_page' => 2,
-				'orderby'        => 'menu_order',
-			], 'page', 'TimberPostSubclass' );
+				'orderby'        => 'post_date',
+				'order'          => 'ASC'
+			] );
 
-			$this->assertInstanceOf( 'page', $term_posts[0] );
-			$this->assertEquals( 'page', $term_posts[0]->post_type );
-			$this->assertEquals( 2, count( $term_posts ) );
+			$this->assertCount( 2, $term_posts );
+			$this->assertEquals( 'Earlier', $term_posts[0]->title() );
+			$this->assertEquals( 'Later', $term_posts[1]->title() );
 		}
 
 		function testTermChildren() {
@@ -290,39 +374,43 @@
 			$local = $this->factory->term->create(array('name' => 'Local', 'parent' => $parent_id, 'taxonomy' => 'category'));
 			$int = $this->factory->term->create(array('name' => 'International', 'parent' => $parent_id, 'taxonomy' => 'category'));
 
-			$term = new TimberTerm($parent_id);
+			// @todo #2087 get this to work w/o $taxonomy param
+			$term = Timber::get_term($parent_id, '');
 			$children = $term->children();
 			$this->assertEquals(2, count($children));
 			$this->assertEquals('Local', $children[0]->name);
 		}
 
 		/**
-		 @issue #824
+		 * @ticket #824
 		 */
 		function testTermWithNativeMeta() {
 			$tid = $this->factory->term->create(array('name' => 'News', 'taxonomy' => 'category'));
 			add_term_meta($tid, 'foo', 'bar');
-			$term = new TimberTerm($tid);
+			// @todo #2087 get this to work w/o $taxonomy param
+			$term = Timber::get_term($tid, '');
 			$template = '{{term.foo}}';
 			$compiled = Timber::compile_string($template, array('term' => $term));
 			$this->assertEquals('bar', $compiled);
 		}
 
 		/**
-		 @issue #824
+		 * @ticket #824
 		 */
 		function testTermWithNativeMetaFalse() {
 			$tid = $this->factory->term->create(array('name' => 'News', 'taxonomy' => 'category'));
 			add_term_meta($tid, 'foo', false);
-			$term = new TimberTerm($tid);
+			// @todo #2087 get this to work w/o $taxonomy param
+			$term = Timber::get_term($tid, '');
 			$this->assertEquals('', $term->meta('foo'));
 		}
 
 		/**
-		 @issue #824
+		 * @ticket #824
 		 */
 		function testTermWithNativeMetaNotExisting() {
 			$tid = $this->factory->term->create(array('name' => 'News', 'taxonomy' => 'category'));
+
 			add_term_meta($tid, 'bar', 'qux');;
 			$wp_native_value = get_term_meta($tid, 'foo', true);
 			$acf_native_value = get_field('foo', 'category_'.$tid);
@@ -330,7 +418,8 @@
 			$valid_wp_native_value = get_term_meta($tid, 'bar', true);
 			$valid_acf_native_value = get_field('bar', 'category_'.$tid);
 
-			$term = new TimberTerm($tid);
+			// @todo #2087 get this to work w/o $taxonomy param
+			$term = Timber::get_term($tid, '');
 
 			//test baseline "bar" data
 			$this->assertEquals('qux', $valid_wp_native_value);
@@ -347,7 +436,8 @@
 		function testTermEditLink() {
 			wp_set_current_user(1);
 			$tid = $this->factory->term->create(array('name' => 'News', 'taxonomy' => 'category'));
-			$term = new TimberTerm($tid);
+			// @todo #2087 get this to work w/o $taxonomy param
+			$term = Timber::get_term($tid, '');
 			$links = array();
 
 			$links[] = 'http://example.org/wp-admin/term.php?taxonomy=category&tag_ID='.$tid.'&post_type=post';
@@ -356,7 +446,6 @@
 			$links[] = 'http://example.org/wp-admin/term.php?taxonomy=category&term_id='.$tid.'&post_type=post';
 			$this->assertContains($term->edit_link(), $links);
 		}
-
 	}
 
 	class Arts extends Timber\Term {

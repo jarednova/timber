@@ -28,20 +28,21 @@
     "docs": "https://timber.github.io/docs/"
   },
   "require": {
-    "php": ">=5.3.0|7.*",
-    "twig/twig": "^1.41|^2.10",
-    "upstatement/routes": "0.8",
+    "php": "^7.0",
+    "twig/twig": "^2.10",
     "composer/installers": "~1.0",
-    "twig/cache-extension": "^1.5"
+    "twig/cache-extension": "^1.5.0"
   },
   "require-dev": {
-    "johnpbloch/wordpress": "*",
-    "phpunit/phpunit": "5.7.16|6.*",
+    "johnpbloch/wordpress": ">=5.4.0",
+    "phpunit/phpunit": "7.*",
     "squizlabs/php_codesniffer": "3.*",
     "wp-coding-standards/wpcs": "^2.0",
     "wpackagist-plugin/advanced-custom-fields": "5.*",
     "wpackagist-plugin/co-authors-plus": "3.2.*|3.4.*",
-    "dealerdirect/phpcodesniffer-composer-installer": "^0.7.0"
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.7.0",
+    "szepeviktor/phpstan-wordpress": "^0.7.0",
+    "php-stubs/wp-cli-stubs": "^2.2.0"
   },
   "suggest": {
     "satooshi/php-coveralls": "1.0.* for code coverage"
@@ -56,7 +57,8 @@
       "tests/"
     ],
     "exclude-from-classmap": [
-      "tests/php"
+      "tests/php",
+      "tests/phpstan"
     ]
   },
   "repositories": [

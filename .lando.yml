@@ -1,0 +1,97 @@
+name: timber
+recipe: wordpress
+config:
+  webroot: wordpress
+  php: '7.0'
+
+services:
+  appserver:
+    run_as_root:
+      - apt-get update
+      - apt-get install zip jq subversion -y
+
+    run:
+      - /bin/bash -c "[ ! -d /app/tmp ] && mkdir /app/tmp || echo Directory exists!"
+      - composer install
+      - /app/lando-config/scripts/setup-wordpress.sh
+      - /app/lando-config/scripts/install-wp-tests.sh
+
+    overrides:
+      environment:
+        # Pass any non-empty CI envvar from the host into Lando
+        # This is so we can force non-interactive mode setting up WP
+        CI: ${CI:-''}
+        TMPDIR: /app/tmp
+
+  database:
+    type: mysql:5.7
+
+  database-unit-test:
+    type: mysql:5.7
+    portforward: true
+    creds:
+      user: timber
+      password: timber
+      database: timber
+
+  phpmyadmin:
+    type: phpmyadmin:4.7
+
+  mailhog:
+    type: mailhog
+    hogfrom:
+      - appserver
+
+  docs:
+    type: nginx
+    ssl: true
+    webroot: docs/_book
+
+tooling:
+  install:
+    service: appserver
+    cmd: '/app/lando-config/scripts/setup-wordpress.sh'
+    description: 'Install and configure WordPress for custom plugin dev'
+
+  debug:
+    service: appserver
+    cmd: 'tail -f /app/wordpress/wp-content/debug.log'
+    description: 'Get real-time WP debug log output'
+
+  install-test-suite:
+    service: appserver
+    cmd: '/app/lando-config/scripts/install-wp-tests.sh'
+    description: 'Installs test suite.'
+
+  unit:
+    service: appserver
+    cmd: '/app/vendor/bin/phpunit'
+    description: 'Run unit tests'
+
+  sniff:
+    service: appserver
+    cmd: 'composer sniff'
+    description: 'Run phpcs code sniffer'
+
+  sniff-summary:
+    service: appserver
+    cmd: 'composer sniff-summary'
+    description: 'Summarize phpcs results'
+
+  sniff-fix:
+    service: appserver
+    cmd: 'composer sniff-fix'
+    description: 'Fix coding standards issues that are automatically fixable'
+
+proxy:
+  appserver:
+    - timber.lndo.site
+
+  mailhog:
+    - mail.timber.lndo.site
+
+  phpmyadmin:
+    - phpmyadmin.timber.lndo.site
+
+  docs:
+    - docs.timber.lndo.site

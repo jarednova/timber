@@ -2,13 +2,17 @@
 
 namespace Timber;
 
-use Timber\Core;
-use Timber\Post;
+use WP_Post;
+use WP_Term;
 
+use Timber\Factory\MenuItemFactory;
+
+/**
+ * Class Menu
+ *
+ * @api
+ */
 class Menu extends Term {
-
-	public $MenuItemClass = 'Timber\MenuItem';
-	public $PostClass = 'Timber\Post';
 
 	/**
 	 * @api
@@ -24,19 +28,19 @@ class Menu extends Term {
 
 	/**
 	 * @api
-	 * @var integer The ID of the menu, corresponding to the wp_terms table.
+	 * @var int The ID of the menu, corresponding to the wp_terms table.
 	 */
 	public $id;
 
 	/**
 	 * @api
-	 * @var integer The ID of the menu, corresponding to the wp_terms table.
+	 * @var int The ID of the menu, corresponding to the wp_terms table.
 	 */
 	public $ID;
 
 	/**
 	 * @api
-	 * @var integer The ID of the menu, corresponding to the wp_terms table.
+	 * @var int The ID of the menu, corresponding to the wp_terms table.
 	 */
 	public $term_id;
 
@@ -62,6 +66,11 @@ class Menu extends Term {
 	public $options;
 
 	/**
+	 * @var MenuItem the current menu item
+	 */
+	private $_current_item;
+
+	/**
 	 * @api
 	 * @var array The unfiltered options sent forward via the user in the __construct
 	 */
@@ -77,7 +86,23 @@ class Menu extends Term {
 	public $theme_location = null;
 
 	/**
+	 * @internal
+	 * @param \WP_Term   $wp_term the vanilla WP term object to build from
+	 * @param array      $options Optional. An array of options. Right now, only the `depth` is
+	 *                            supported which says how many levels of hierarchy should be
+	 *                            included in the menu. Default `0`, which is all levels.
+	 * @return \Timber\Term
+	 */
+	public static function build(WP_Term $wp_term, array $options = []) : Term {
+		$term = new static($wp_term->term_id, $options);
+		$term->init($wp_term);
+		return $term;
+	}
+
+	/**
 	 * Initialize a menu.
+	 *
+	 * @api
 	 *
 	 * @param int|string $slug    A menu slug, the term ID of the menu, the full name from the admin
 	 *                            menu, the slug of the registered location or nothing. Passing
@@ -99,29 +124,14 @@ class Menu extends Term {
 		) );
 
 		$this->depth = (int) $this->options['depth'];
-
-		if ( $slug != 0 && is_numeric($slug) ) {
-			$menu_id = $slug;
-		} else if ( is_array($locations) && ! empty( $locations ) ) {
-			$menu_id = $this->get_menu_id_from_locations($slug, $locations);
-		} else if ( $slug === false ) {
-			$menu_id = false;
-		}
-		if ( !$menu_id ) {
-			$menu_id = $this->get_menu_id_from_terms($slug);
-		}
-		if ( $menu_id ) {
-			$this->init($menu_id);
-		} else {
-			$this->init_as_page_menu();
-		}
 	}
 
 	/**
 	 * @internal
 	 * @param int $menu_id
 	 */
-	protected function init( $menu_id ) {
+	protected function init(WP_Term $menu_term) {
+		$menu_id = $menu_term->term_id;
 		$menu = wp_get_nav_menu_items($menu_id);
 		$locations = get_nav_menu_locations();
 
@@ -131,6 +141,9 @@ class Menu extends Term {
 		}
 
 		if ( $menu ) {
+			// @todo do we really need to call this fn? It's marked as "private" in the WP docs.
+			// Commenting out this line only breaks a single test: TestTimberMenu::testMenuTwigWithClasses
+			// ...maybe that means there's a way to accomplish what we need without calling a "private" fn.
 			_wp_menu_item_classes_by_context($menu);
 			if ( is_array($menu) ) {
 				/**
@@ -168,12 +181,12 @@ class Menu extends Term {
 
 				$menu = apply_filters( 'wp_nav_menu_objects', $menu, $default_args_obj );
 
-				$menu = self::order_children($menu);
-				$menu = self::strip_to_depth_limit($menu);
+				$menu = $this->order_children($menu);
+				$menu = $this->strip_to_depth_limit($menu);
 			}
 			$this->items = $menu;
-			$menu_info = wp_get_nav_menu_object($menu_id);
-			$this->import($menu_info);
+
+			$this->import($menu_term);
 			$this->ID = $this->term_id;
 			$this->id = $this->term_id;
 			$this->title = $this->name;
@@ -183,7 +196,7 @@ class Menu extends Term {
 	/**
 	 * @internal
 	 */
-	protected function init_as_page_menu() {
+	public function init_as_page_menu() {
 		$menu = get_pages(array('sort_column' => 'menu_order'));
 		if ( $menu ) {
 			foreach ( $menu as $mi ) {
@@ -191,59 +204,10 @@ class Menu extends Term {
 			}
 			_wp_menu_item_classes_by_context($menu);
 			if ( is_array($menu) ) {
-				$menu = self::order_children($menu);
+				$menu = $this->order_children($menu);
 			}
 			$this->items = $menu;
 		}
-	}
-
-	/**
-	 * @internal
-	 * @param string $slug
-	 * @param array $locations
-	 * @return integer
-	 */
-	protected function get_menu_id_from_locations( $slug, $locations ) {
-		if ( $slug === 0 ) {
-			$slug = $this->get_menu_id_from_terms($slug);
-		}
-		if ( is_numeric($slug) ) {
-			$slug = array_search($slug, $locations);
-		}
-		if ( isset($locations[$slug]) ) {
-			$menu_id = $locations[$slug];
-			if ( function_exists('wpml_object_id_filter') ) {
-				$menu_id = wpml_object_id_filter($locations[$slug], 'nav_menu');
-			}
-
-			return $menu_id;
-		}
-	}
-
-	/**
-	 * @internal
-	 * @param int $slug
-	 * @return int
-	 */
-	protected function get_menu_id_from_terms( $slug = 0 ) {
-		if ( !is_numeric($slug) && is_string($slug) ) {
-			//we have a string so lets search for that
-			$menu = get_term_by('slug', $slug, 'nav_menu');
-			if ( $menu ) {
-				return $menu->term_id;
-			}
-			$menu = get_term_by('name', $slug, 'nav_menu');
-			if ( $menu ) {
-				return $menu->term_id;
-			}
-		}
-		$menus = get_terms('nav_menu', array('hide_empty' => true));
-		if ( is_array($menus) && count($menus) ) {
-			if ( isset($menus[0]->term_id) ) {
-				return $menus[0]->term_id;
-			}
-		}
-		return 0;
 	}
 
 	/**
@@ -268,46 +232,39 @@ class Menu extends Term {
 	 * @return array
 	 */
 	protected function order_children( $items ) {
-		$index = array();
-		$menu = array();
-		$wp_post_menu_item = null;
+		$items_by_id = [];
+		$menu        = [];
+
 		foreach ( $items as $item ) {
 			if ( isset($item->title) ) {
 				// Items from WordPress can come with a $title property which conflicts with methods
 				$item->__title = $item->title;
 				unset($item->title);
 			}
+
+			// Check if we're working with a post
 			if ( isset($item->ID) ) {
-				if ( is_object($item) && get_class($item) == 'WP_Post' ) {
-					$wp_post_menu_item = $item;
-					$item = new $this->PostClass($item);
-				}
-				$menu_item = $this->create_menu_item($item);
-				if ( $wp_post_menu_item ) {
-					$menu_item->import_classes($wp_post_menu_item);
-				}
-				$wp_post_menu_item = null;
-				$index[$item->ID] = $menu_item;
+				$factory   = new MenuItemFactory();
+				$menu_item = $factory->from($item, $this);
+
+				// Index each item by its ID
+				$items_by_id[$item->ID] = $menu_item;
 			}
 		}
-		foreach ( $index as $item ) {
-			if ( isset($item->menu_item_parent) && $item->menu_item_parent && isset($index[$item->menu_item_parent]) ) {
-				$index[$item->menu_item_parent]->add_child($item);
+
+		// Walk through our indexed items and assign them to their parents as applicable
+		foreach ( $items_by_id as $item ) {
+			if ( !empty($item->menu_item_parent) && isset($items_by_id[$item->menu_item_parent]) ) {
+				// This one is a child item, add it to its parent
+				$items_by_id[$item->menu_item_parent]->add_child($item);
 			} else {
+				// This is a top-level item, add it as such
 				$menu[] = $item;
 			}
 		}
 		return $menu;
 	}
 
-	/**
-	 * @internal
-	 * @param object $item the WP menu item object to wrap
-	 * @return mixed an instance of the user-configured $MenuItemClass
-	 */
-	protected function create_menu_item($item) {
-		return new $this->MenuItemClass( $item, $this );
-	}
 
 	/**
 	 * @internal
@@ -325,7 +282,7 @@ class Menu extends Term {
 				continue;
 			}
 
-			$currentItem->children = self::strip_to_depth_limit($currentItem->children, $current + 1);
+			$currentItem->children = $this->strip_to_depth_limit($currentItem->children, $current + 1);
 		}
 
 		return $menu;
@@ -352,5 +309,114 @@ class Menu extends Term {
 		}
 
 		return array();
+	}
+
+	/**
+	 * Get the current MenuItem based on the WP context
+	 *
+	 * @see _wp_menu_item_classes_by_context()
+	 * @example
+	 * Say you want to render the sub-tree of the main menu that corresponds
+	 * to the menu item for the current page, such as in a context-aware sidebar:
+	 * ```twig
+	 * <div class="sidebar">
+	 *   <a href="{{ menu.current_item.link }}">
+	 *     {{ menu.current_item.title }}
+	 *   </a>
+	 *   <ul>
+	 *     {% for child in menu.current_item.children %}
+	 *       <li>
+	 *         <a href="{{ child.link }}">{{ child.title }}</a>
+	 *       </li>
+	 *     {% endfor %}
+	 *   </ul>
+	 * </div>
+	 * ```
+	 * @param int $depth the maximum depth to traverse the menu tree to find the
+	 * current item. Defaults to null, meaning no maximum. 1-based, meaning the
+	 * top level is 1.
+	 * @return MenuItem the current `Timber\MenuItem` object, i.e. the menu item
+	 * corresponding to the current post.
+	 */
+	public function current_item( $depth = null ) {
+		if ( false === $this->_current_item ) {
+			// I TOLD YOU BEFORE.
+			return false;
+		}
+
+		if ( empty($this->items) ) {
+			$this->_current_item = false;
+			return $this->_current_item;
+		}
+
+		if ( ! isset($this->_current_item) ) {
+			$current = $this->traverse_items_for_current(
+				$this->items,
+				$depth
+			);
+
+			if ( is_null($depth) ) {
+				$this->_current_item = $current;
+			} else {
+				return $current;
+			}
+		}
+
+		return $this->_current_item;
+	}
+
+	/**
+	 * Alias for current_top_level_item(1).
+	 *
+	 * @return MenuItem the current top-level `Timber\MenuItem` object.
+	 */
+	public function current_top_level_item() {
+		return $this->current_item( 1 );
+	}
+
+
+	/**
+	 * Traverse an array of MenuItems in search of the current item.
+	 *
+	 * @internal
+	 * @param array $items the items to traverse.
+	 */
+	private function traverse_items_for_current( $items, $depth ) {
+		$current 			= false;
+		$currentDepth = 1;
+		$i       			= 0;
+
+		while ( isset($items[ $i ]) ) {
+			$item = $items[ $i ];
+
+			if ( $item->current ) {
+				// cache this item for subsequent calls.
+				$current = $item;
+				// stop looking.
+				break;
+			} elseif ( $item->current_item_ancestor ) {
+				// we found an ancestor,
+				// but keep looking for a more precise match.
+				$current = $item;
+
+				if ( $currentDepth === $depth ) {
+					// we're at max traversal depth.
+					return $current;
+				}
+
+				// we're in the right subtree, so go deeper.
+				if ( $item->children() ) {
+					// reset the counter, since we're at a new level.
+					$items = $item->children();
+					$i     = 0;
+					$currentDepth++;
+					continue;
+				}
+			}
+
+			$i++;
+		}
+
+		return $current;
 	}
 }

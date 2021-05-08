@@ -1,5 +1,5 @@
 <?php
-	class TimberPostSubclass extends TimberPost {
+	class TimberPostSubclass extends Timber\Post {
 
 		public function foo(){
 			return 'bar';

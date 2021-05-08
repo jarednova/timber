@@ -2,48 +2,61 @@
 
 namespace Timber;
 
-use Timber\Core;
-use Timber\Theme;
-use Timber\URLHelper;
-
 /**
- * Need to display info about your theme? Well you've come to the right place. By default info on the current theme comes for free with what's fetched by `Timber::context()` in which case you can access it your theme like so:
+ * Class Theme
+ *
+ * Need to display info about your theme? Well you've come to the right place. By default info on
+ * the current theme comes for free with what's fetched by `Timber::context()` in which case you
+ * can access it your theme like so:
+ *
+ * @api
  * @example
  * ```php
  * <?php
  * $context = Timber::context();
+ *
  * Timber::render('index.twig', $context);
  * ?>
  * ```
  * ```twig
- * <script src="{{theme.link}}/static/js/all.js"></script>
+ * <script src="{{ theme.link }}/static/js/all.js"></script>
  * ```
  * ```html
  * <script src="http://example.org/wp-content/themes/my-theme/static/js/all.js"></script>
  * ```
- * @package Timber
  */
 class Theme extends Core {
 
 	/**
+	 * The human-friendly name of the theme (ex: `My Timber Starter Theme`)
+	 *
 	 * @api
 	 * @var string the human-friendly name of the theme (ex: `My Timber Starter Theme`)
 	 */
 	public $name;
 
 	/**
+	 * The version of the theme (ex: `1.2.3`)
+	 *
 	 * @api
 	 * @var string the version of the theme (ex: `1.2.3`)
 	 */
 	public $version;
 
 	/**
+	 * Timber\Theme object for the parent theme.
+	 *
+	 * Always returns the top-most theme. If the current theme is also the parent theme, it will
+	 * return itself.
+	 *
 	 * @api
-	 * @var TimberTheme|bool the TimberTheme object for the parent theme (if it exists), false otherwise
+	 * @var \Timber\Theme the Timber\Theme object for the parent theme
 	 */
-	public $parent = false;
+	public $parent;
 
 	/**
+	 * Slug of the parent theme (ex: `_s`)
+	 *
 	 * @api
 	 * @var string the slug of the parent theme (ex: `_s`)
 	 */
@@ -54,23 +67,31 @@ class Theme extends Core {
 	 * @var string the slug of the theme (ex: `my-super-theme`)
 	 */
 	public $slug;
+
+	/**
+	 * @api
+	 * @var string
+	 */
 	public $uri;
 
 	/**
-	 * @var WP_Theme the underlying WordPress native Theme object
+	 * @var \WP_Theme the underlying WordPress native Theme object
 	 */
 	private $theme;
 
 	/**
-	 * Constructs a new TimberTheme object. NOTE the TimberTheme object of the current theme comes in the default `Timber::context()` call. You can access this in your twig template via `{{site.theme}}.
-	 * @param string $slug
+	 * Constructs a new `Timber\Theme` object.
+	 *
+	 * The `Timber\Theme` object of the current theme comes in the default `Timber::context()`
+	 * call. You can access this in your twig template via `{{ site.theme }}`.
+	 *
+	 * @api
 	 * @example
 	 * ```php
 	 * <?php
-	 *     $theme = new TimberTheme("my-theme");
+	 *     $theme = new Timber\Theme("my-theme");
 	 *     $context['theme_stuff'] = $theme;
 	 *     Timber::render('single.twig', $context);
-	 * ?>
 	 * ```
 	 * ```twig
 	 * We are currently using the {{ theme_stuff.name }} theme.
@@ -78,14 +99,18 @@ class Theme extends Core {
 	 * ```html
 	 * We are currently using the My Theme theme.
 	 * ```
+	 *
+	 * @param string $slug
 	 */
 	public function __construct( $slug = null ) {
 		$this->init($slug);
 	}
 
 	/**
+	 * Initalizes the Theme object
+	 *
 	 * @internal
-	 * @param string $slug
+	 * @param string $slug of theme (eg 'twentysixteen').
 	 */
 	protected function init( $slug = null ) {
 		$this->theme = wp_get_theme($slug);
@@ -95,6 +120,8 @@ class Theme extends Core {
 
 		$this->uri = $this->theme->get_template_directory_uri();
 
+		$this->parent = $this;
+		$this->parent_slug = $this->theme->get_stylesheet();
 		if ( $this->theme->parent() ) {
 			$this->parent_slug = $this->theme->parent()->get_stylesheet();
 			$this->parent = new Theme($this->parent_slug);
@@ -120,6 +147,7 @@ class Theme extends Core {
 	}
 
 	/**
+	 * @api
 	 * @param string $name
 	 * @param bool $default
 	 * @return string
@@ -129,6 +157,7 @@ class Theme extends Core {
 	}
 
 	/**
+	 * @api
 	 * @return array
 	 */
 	public function theme_mods() {
@@ -137,8 +166,8 @@ class Theme extends Core {
 
 	/**
 	 * Gets a raw, unformatted theme header.
-	 * 
-	 * @api 
+	 *
+	 * @api
 	 * @see \WP_Theme::get()
 	 * @example
 	 * ```twig
@@ -173,4 +202,3 @@ class Theme extends Core {
 		return $this->theme->display( $header );
 	}
 }
-

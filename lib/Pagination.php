@@ -2,6 +2,11 @@
 
 namespace Timber;
 
+/**
+ * Class Pagination
+ *
+ * @api
+ */
 class Pagination {
 
 	public $current;
@@ -10,12 +15,21 @@ class Pagination {
 	public $next;
 	public $prev;
 
+	/**
+	 * Pagination constructor.
+	 *
+	 * @api
+	 *
+	 * @param array           $prefs
+	 * @param \WP_Query|null  $wp_query
+	 */
 	public function __construct( $prefs = array(), $wp_query = null ) {
 		$this->init($prefs, $wp_query);
 	}
 
 	/**
 	 * Get pagination.
+	 *
 	 * @api
 	 * @param array   $prefs
 	 * @return array mixed
@@ -32,15 +46,12 @@ class Pagination {
 		}
 
 		// use the current page from the provided query if available; else fall back to the global
-		$paged = isset($wp_query->query_vars['paged']) ? $wp_query->query_vars['paged'] : get_query_var('paged');
+		$paged = $wp_query->query_vars['paged'] ?? get_query_var('paged');
 
 		global $wp_rewrite;
 		$args = array();
 		// calculate the total number of pages based on found posts and posts per page
-		$ppp = 10;
-		if ( isset($wp_query->query_vars['posts_per_page']) ) {
-			$ppp = $wp_query->query_vars['posts_per_page'];
-		}
+		$ppp = $wp_query->query_vars['posts_per_page'] ?? 10;
 
 		$args['total'] = ceil($wp_query->found_posts / $ppp);
 		if ( $wp_rewrite->using_permalinks() ) {
@@ -69,7 +80,7 @@ class Pagination {
 		}
 		$this->current = $args['current'];
 		$this->total = $args['total'];
-		$this->pages = Pagination::paginate_links($args);
+		$this->pages = self::paginate_links($args);
 		if ( $this->total <= count($this->pages) ) {
 			// decrement current so that it matches up with the 0 based index used by the pages array
 			$current = $this->current - 1;
@@ -123,7 +134,7 @@ class Pagination {
 		);
 		$args = wp_parse_args($args, $defaults);
 
-        $args = Pagination::sanitize_args($args);
+		$args = self::sanitize_args($args);
 
 		// Who knows what else people pass in $args
 		$args['total'] = intval((int) $args['total']);
@@ -194,16 +205,16 @@ class Pagination {
 		}
 		return $add_args;
 	}
-	
+
 	protected static function sanitize_args( $args ) {
 
 		$format_args = array();
-		
+
 		$format = explode('?', str_replace('%_%', $args['format'], $args['base']));
 		$format_query = isset($format[1]) ? $format[1] : '';
 
 		wp_parse_str($format_query, $format_args);
-		
+
 		// Remove the format argument from the array of query arguments, to avoid overwriting custom format.
 		foreach ( $format_args as $format_arg => $format_arg_value ) {
 			unset($args['add_args'][urlencode_deep($format_arg)]);

@@ -73,7 +73,7 @@ class Resize extends ImageOperation {
 		}
 		$image = new \Imagick($load_filename);
 		$image = $image->coalesceImages();
-		$crop  = self::get_target_sizes($editor);
+		$crop  = $this->get_target_sizes($editor);
 		foreach ( $image as $frame ) {
 			$frame->cropImage($crop['src_w'], $crop['src_h'], $crop['x'], $crop['y']);
 			$frame->thumbnailImage($w, $h);
@@ -181,13 +181,13 @@ class Resize extends ImageOperation {
 			//should be resized by gif resizer
 			if ( ImageHelper::is_animated_gif($load_filename) ) {
 				//attempt to resize, return if successful proceed if not
-				$gif = self::run_animated_gif($load_filename, $save_filename, $image);
+				$gif = $this->run_animated_gif($load_filename, $save_filename, $image);
 				if ( $gif ) {
 					return true;
 				}
 			}
 
-			$crop = self::get_target_sizes($image);
+			$crop = $this->get_target_sizes($image);
 			$image->crop( 	$crop['x'],
 							$crop['y'],
 							$crop['src_w'],

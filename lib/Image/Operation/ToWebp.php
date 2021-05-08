@@ -2,12 +2,12 @@
 
 namespace Timber\Image\Operation;
 
-use Timber\Helper as Helper;
+use Timber\Helper;
 use Timber\Image\Operation as ImageOperation;
 use Timber\ImageHelper;
 
 /**
- * This class is used to process webp images. Not all server configurations support webp. 
+ * This class is used to process webp images. Not all server configurations support webp.
  * If webp is not enabled, Timber will generate webp images instead
  * @codeCoverageIgnore
  */

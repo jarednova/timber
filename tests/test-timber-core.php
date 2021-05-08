@@ -1,6 +1,6 @@
 <?php
 
-class TimberCoreTester extends TimberPost {
+class TimberCoreTester extends Timber\Post {
 
 	public $public = 'public A';
 	protected $protected = 'protected A';
@@ -23,8 +23,12 @@ class ClassB {
 class TestTimberCore extends Timber_UnitTestCase {
 
 	function testCoreImport() {
+		$this->register_post_classmap_temporarily([
+			'post' => TimberCoreTester::class,
+		]);
+
 		$post_id = $this->factory->post->create();
-		$tc = new TimberCoreTester($post_id);
+		$tc = Timber::get_post($post_id);
 		$object = new stdClass();
 		$object->frank = 'Drebin';
 		$object->foo = 'Dark Helmet';
@@ -37,8 +41,12 @@ class TestTimberCore extends Timber_UnitTestCase {
 	}
 
 	function testCoreImportWithPropertyTypes() {
+		$this->register_post_classmap_temporarily([
+			'post' => TimberCoreTester::class,
+		]);
+
 		$post_id = $this->factory->post->create();
-		$tc = new TimberCoreTester($post_id);
+		$tc = Timber::get_post($post_id);
 		$object = new ClassB();
 		$tc->import((object) (array) $object);
 		$this->assertEquals('public B', $tc->public);

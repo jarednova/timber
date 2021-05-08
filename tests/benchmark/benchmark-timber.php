@@ -3,7 +3,7 @@
 	class TimberBenchmark {
 
 		static function testLoader(){
-			$TimberLoader = new TimberLoader();
+			$TimberLoader = new Timber\Loader();
 			for ($i = 0; $i<5000; $i++){
 				$loader = $TimberLoader->get_loader();
 			}

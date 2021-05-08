@@ -1,0 +1,26 @@
+{
+  "version": "v1",
+  "layout": "page",
+  "nav": {
+    "getting-started": {
+      "name": "Getting Started",
+      "slug": "getting-started",
+      "url": "/getting-started/"
+    },
+    "guides": {
+      "name": "Guides",
+      "slug": "guides",
+      "url": "/guides/"
+    },
+    "reference": {
+      "name": "Reference",
+      "slug": "reference",
+      "url": "/reference/"
+    },
+    "upgrade-guides": {
+      "name": "Upgrade Guides",
+      "slug": "upgrade-guides",
+      "url": "/upgrade-guides/"
+    }
+  }
+}

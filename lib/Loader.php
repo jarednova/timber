@@ -3,6 +3,11 @@
 namespace Timber;
 
 use Timber\Cache\Cleaner;
+use Twig\CacheExtension;
+use Twig\Environment;
+use Twig\Extension\DebugExtension;
+use Twig\Loader\FilesystemLoader;
+use Twig\TwigFunction;
 
 class Loader {
 
@@ -15,6 +20,9 @@ class Loader {
 	const CACHE_TRANSIENT = 'transient';
 	const CACHE_SITE_TRANSIENT = 'site-transient';
 	const CACHE_USE_DEFAULT = 'default';
+
+	/** Identifier of the main namespace. Will likely mirror Twig\Loader\FilesystemLoader::MAIN_NAMESPACE */
+	const MAIN_NAMESPACE = '__main__';
 
 	public static $cache_modes = array(
 		self::CACHE_NONE,
@@ -32,8 +40,36 @@ class Loader {
 	 */
 	public function __construct( $caller = false ) {
 		$this->locations = LocationManager::get_locations($caller);
-		$this->cache_mode = apply_filters('timber_cache_mode', $this->cache_mode);
+
+		/**
+		 * Filters the cache mode.
+		 *
+		 * You can read more about Caching in the
+		 * [Performance/Caching]({{<relref "performance.md" >}}) guide.
+		 *
+		 * @since 0.20.10
+		 *
+		 * @param string $cache_mode The cache mode. Can be one of the following:
+		 *                           `Timber\Loader::CACHE_NONE`,
+		 *                           `Timber\Loader::CACHE_OBJECT`,
+		 *                           `Timber\Loader::CACHE_TRANSIENT`,
+		 *                           `Timber\Loader::CACHE_SITE_TRANSIENT`,
+		 *                           `Timber\Loader::CACHE_USE_DEFAULT`.
+		 *                           Default `Timber\Loader::CACHE_TRANSIENT`.
+		 */
 		$this->cache_mode = apply_filters('timber/cache/mode', $this->cache_mode);
+
+		/**
+		 * Filters the cache mode.
+		 *
+		 * @deprecated 2.0.0, use `timber/cache/mode`
+		 */
+		$this->cache_mode = apply_filters_deprecated(
+			'timber_cache_mode',
+			array( $this->cache_mode ),
+			'2.0.0',
+			'timber/cache/mode'
+		);
 	}
 
 	/**
@@ -71,10 +107,59 @@ class Loader {
 			if ( strlen($file) ) {
 				$loader = $this->get_loader();
 				$result = $loader->getCacheKey($file);
-				do_action('timber_loader_render_file', $result);
+
+				/**
+				 * Fires after …
+				 *
+				 * @todo Add summary, description parameter description
+				 *
+				 * @param string $result
+				 */
+				do_action( 'timber/loader/render_file', $result );
+
+				/**
+				 * Fires after …
+				 *
+				 * This action is used by the Timber Debug Bar extension.
+				 *
+				 * @todo Add summary
+				 *
+				 * @deprecated 2.0.0, use `timber/loader/render_file`
+				 */
+				do_action_deprecated(
+					'timber_loader_render_file',
+					array( $result ),
+					'2.0.0',
+					'timber/loader/render_file'
+				);
 			}
-			$data = apply_filters('timber_loader_render_data', $data);
+
+			/**
+			 * Filters …
+			 *
+			 * @todo Add summary, description, example, parameter descriptions
+			 *
+			 * @since 0.20.10
+			 *
+			 * @param array  $data
+			 * @param string $file
+			 */
 			$data = apply_filters('timber/loader/render_data', $data, $file);
+
+			/**
+			 * Filters …
+			 *
+			 * @todo Add summary
+			 *
+			 * @deprecated 2.0.0, use `timber/loader/render_data`
+			 */
+			$data = apply_filters_deprecated(
+				'timber_loader_render_data',
+				array( $data ),
+				'2.0.0',
+				'timber/loader/render_data'
+			);
+
 			$template = $twig->load($file);
 			$output = $template->render($data);
 		}
@@ -83,8 +168,30 @@ class Loader {
 			$this->delete_cache();
 			$this->set_cache($key, $output, self::CACHEGROUP, $expires, $cache_mode);
 		}
-		$output = apply_filters('timber_output', $output);
-		return apply_filters('timber/output', $output, $data, $file);
+
+		/**
+		 * Filters …
+		 *
+		 * @todo  Add summary, description, example, parameter descriptions
+		 *
+		 * @since 0.20.10
+		 *
+		 * @param string $output
+		 * @param array  $data
+		 * @param string $file
+		 */
+		$output = apply_filters('timber/output', $output, $data, $file);
+
+		/**
+		 * Filters …
+		 *
+		 * @todo       Add summary
+		 *
+		 * @deprecated 2.0.0, use `timber/output`
+		 */
+		$output = apply_filters_deprecated( 'timber_output', array( $output ), '2.0.0', 'timber/output' );
+
+		return $output;
 	}
 
 	protected function delete_cache() {
@@ -123,76 +230,294 @@ class Loader {
 	}
 
 	/**
-	 * @param string $name
-	 * @return bool
-	 * @deprecated 1.3.5 No longer used internally
-	 * @todo remove in 2.x
-	 * @codeCoverageIgnore
-	 */
-	protected function template_exists( $name ) {
-		return $this->get_loader()->exists($name);
-	}
-
-
-	/**
 	 * @return \Twig\Loader\FilesystemLoader
 	 */
 	public function get_loader() {
-		$open_basedir = ini_get('open_basedir');
-		$paths = array_merge($this->locations, array($open_basedir ? ABSPATH : '/'));
-		$paths = apply_filters('timber/loader/paths', $paths);
+		$paths = $this->locations;
 
+		/**
+		 * Filters the template paths used by the Loader.
+		 *
+		 * @since 0.20.10
+		 *
+		 * @deprecated 2.0.0, use `timber/locations`
+		 *
+		 * @param array $paths
+		 */
+		$paths = apply_filters_deprecated(
+			'timber/loader/paths',
+			array( $paths ),
+			'2.0.0',
+			'timber/locations'
+		);
+
+		$open_basedir = ini_get('open_basedir');
 		$rootPath = '/';
 		if ( $open_basedir ) {
 			$rootPath = null;
 		}
-		$fs = new \Twig\Loader\FilesystemLoader($paths, $rootPath);
-		$fs = apply_filters('timber/loader/loader', $fs, $paths, $rootPath);
+
+		$fs = new FilesystemLoader( array(), $rootPath );
+
+		foreach ( $paths as $namespace => $path_locations ) {
+			if ( is_array( $path_locations ) ) {
+				array_map( function ( $path ) use ( $fs, $namespace ) {
+					if ( is_string($namespace) ) {
+						$fs->addPath( $path, $namespace );
+					} else {
+						$fs->addPath( $path, Loader::MAIN_NAMESPACE );
+					}
+				}, $path_locations );
+			} else {
+				Helper::deprecated(
+					'add_filter( \'timber/loader/paths\', [\'path/to/my/templates\'] ) in a non-associative array',
+					'add_filter( \'timber/loader/paths\', [ 0 => [ \'path/to/my/templates\' ] ] )',
+					'2.0.0'
+				);
+				$fs->addPath( $path_locations, self::MAIN_NAMESPACE );
+			}
+		}
+
+		/**
+		 * Filters …
+		 *
+		 * @todo Add summary, description, example, parameter description
+		 *
+		 * @link https://github.com/timber/timber/pull/1254
+		 * @since 1.1.11
+		 *
+		 * @param array $paths
+		 */
+		$fs = apply_filters( 'timber/loader/loader', $fs );
+
 		return $fs;
 	}
-
 
 	/**
 	 * @return \Twig\Environment
 	 */
 	public function get_twig() {
-		$loader = $this->get_loader();
-		$params = array('debug' => WP_DEBUG,'autoescape' => false);
-		if ( isset(Timber::$autoescape) ) {
-			$params['autoescape'] = Timber::$autoescape === true ? 'html' : Timber::$autoescape;
+
+		// Default options.
+		$environment_options = array(
+			'debug'      => WP_DEBUG,
+			'autoescape' => false,
+			'cache'      => false,
+		);
+
+		/**
+		 * Filters the environment options that are used when creating a Twig Environment instance.
+		 *
+		 * By default, Timber sets the following values:
+		 *
+		 * - `'debug' => WP_DEBUG`
+		 * - `'autoescape' => false`
+		 * - `'cache' => false`
+		 *
+		 * @api
+		 * @since 1.9.5
+		 * @link https://twig.symfony.com/doc/2.x/api.html#environment-options
+		 * @example
+		 * ```php
+		 * add_filter( 'timber/twig/environment/options', 'update_twig_environment_options' );
+		 *
+		 * /**
+		 *  * Updates Twig environment options.
+		 *  *
+		 *  * @link https://twig.symfony.com/doc/2.x/api.html#environment-options
+		 *  *
+		 *  * @param array $options An array of environment options.
+		 *  *
+		 *  * @return array
+		 *  *\/
+		 * function update_twig_environment_options( $options ) {
+		 *     $options['cache']       = true;
+		 *     $options['auto_reload'] = true;
+		 *
+		 *     return $options;
+		 * }
+		 * ```
+		 *
+		 * @param array $environment_options An array of Twig environment options.
+		 */
+		$environment_options = apply_filters(
+			'timber/twig/environment/options',
+			$environment_options
+		);
+
+		/**
+		 * @deprecated 2.0.0
+		 */
+		if ( isset( Timber::$autoescape ) && false !== Timber::$autoescape ) {
+			Helper::deprecated(
+				'Timber::$autoescape',
+				'the \'timber/twig/environment/options filter\'',
+				'2.0.0'
+			);
+
+			$environment_options['autoescape'] = Timber::$autoescape;
 		}
-		if ( Timber::$cache === true ) {
+
+		/**
+		 * Backwards compatibility fix.
+		 *
+		 * The value `true` doesn’t exist anymore for the `autoescape` option. You need to define
+		 * an auto-escaping fallback strategy. This fallback uses the `html` strategy.
+		 */
+		if ( true === $environment_options['autoescape'] ) {
+			$environment_options['autoescape'] = 'html';
+		}
+
+		/**
+		 * Alias Timber::$cache can be used for Timber::$twig_cache.
+		 *
+		 * @deprecated 2.0.0
+		 */
+		if ( isset( Timber::$cache ) && true === Timber::$cache ) {
 			Timber::$twig_cache = true;
 		}
-		if ( Timber::$twig_cache ) {
-			$twig_cache_loc = apply_filters('timber/cache/location', TIMBER_LOC.'/cache/twig');
+
+		/**
+		 * @deprecated 2.0.0
+		 */
+		if ( isset( Timber::$twig_cache ) && false !== Timber::$twig_cache ) {
+			Helper::deprecated(
+				'Timber::$cache and Timber::$twig_cache',
+				'the \'timber/twig/environment/options filter\'',
+				'2.0.0'
+			);
+
+			$environment_options['cache'] = Timber::$twig_cache;
+		}
+
+		if ( true === $environment_options['cache'] ) {
+			$twig_cache_loc = TIMBER_LOC . '/cache/twig';
+
+			/**
+			 * Filters the cache location used for Twig.
+			 *
+			 * Allows you to set a new cache location for Twig. If the folder doesn’t exist yet, it
+			 * will be created automatically.
+			 *
+			 * @since 0.20.10
+			 * @deprecated 2.0.0
+			 *
+			 * @param string $twig_cache_loc Full path to the cache location. Default `/cache/twig`
+			 *                               in the Timber root folder.
+			 */
+			$twig_cache_loc = apply_filters_deprecated(
+				'timber/cache/location',
+				array( $twig_cache_loc ),
+				'2.0.0',
+				'timber/twig/environment/options'
+			);
+
 			if ( !file_exists($twig_cache_loc) ) {
 				mkdir($twig_cache_loc, 0777, true);
 			}
-			$params['cache'] = $twig_cache_loc;
+
+			$environment_options['cache'] = $twig_cache_loc;
 		}
-		$twig = new \Twig\Environment($loader, $params);
+		$twig = new \Twig\Environment( $this->get_loader(), $environment_options );
+
 		if ( WP_DEBUG ) {
 			$twig->addExtension(new \Twig\Extension\DebugExtension());
 		} else {
-			$twig->addFunction(new Twig_Function('dump', function() {
+			$twig->addFunction(new TwigFunction('dump', function() {
 				return null;
 			}));
 		}
 		$twig->addExtension($this->_get_cache_extension());
 
-		$twig = apply_filters('twig_apply_filters', $twig);
+		/**
+		 * Filters …
+		 *
+		 * @todo Add summary, description, example
+		 *
+		 * @since 0.21.9
+		 *
+		 * @param \Twig\Environment $twig The Twig environment you can add functionality to.
+		 */
 		$twig = apply_filters('timber/twig/filters', $twig);
+
+		/**
+		 * Filters …
+		 *
+		 * @todo Add summary, description, example
+		 *
+		 * @since 1.3.0-rc2
+		 *
+		 * @param \Twig\Environment $twig The Twig environment you can add functionality to.
+		 */
 		$twig = apply_filters('timber/twig/functions', $twig);
+
+		/**
+		 * Filters …
+		 *
+		 * @todo Add summary, description, example
+		 *
+		 * @since 1.1.1
+		 *
+		 * @param \Twig\Environment $twig The Twig environment you can add functionality to.
+		 */
 		$twig = apply_filters('timber/twig/escapers', $twig);
+
+		/**
+		 * Filters …
+		 *
+		 * @todo Add summary, description, example
+		 *
+		 * @since 0.20.10
+		 *
+		 * @param \Twig\Environment $twig The Twig environment you can add functionality to.
+		 */
 		$twig = apply_filters('timber/loader/twig', $twig);
 
+		/**
+		 * Filters …
+		 *
+		 * @deprecated 2.0.0, use `timber/twig/filters`
+		 */
+		$twig = apply_filters_deprecated( 'twig_apply_filters', array( $twig ), '2.0.0', 'timber/twig/filters' );
+
+		/**
+		 * Filters the Twig environment used in the global context.
+		 *
+		 * You can use this filter if you want to add additional functionality to Twig, like global
+		 * variables, filters or functions.
+		 *
+		 * @since 0.21.9
+		 * @example
+		 * ```php
+		 * /**
+		 *  * Adds Twig functionality.
+		 *  *
+		 *  * @param \Twig\Environment $twig The Twig Environment to which you can add additional functionality.
+		 *  *\/
+		 * add_filter( 'timber/twig', function( $twig ) {
+		 *     // Make get_theme_file_uri() usable as {{ theme_file() }} in Twig.
+		 *     $twig->addFunction( new Twig\TwigFunction( 'theme_file', 'get_theme_file_uri' ) );
+		 *
+		 *     return $twig;
+		 * } );
+		 * ```
+		 *
+		 * ```twig
+		 * <a class="navbar-brand" href="{{ site.url }}">
+		 *     <img src="{{ theme_file( 'build/img/logo-example.svg' ) }}" alt="Logo {{ site.title }}">
+		 * </a>
+		 * ```
+		 *
+		 * @param \Twig\Environment $twig The Twig environment.
+		 */
 		$twig = apply_filters('timber/twig', $twig);
 
 		/**
-		 * get_twig is deprecated, use timber/twig
+		 * Filters the Twig environment used in the global context.
+		 *
+		 * @deprecated 2.0.0
 		 */
-		$twig = apply_filters('get_twig', $twig);
+		$twig = apply_filters_deprecated( 'get_twig', array( $twig ), '2.0.0', 'timber/twig' );
 
 		return $twig;
 	}
@@ -279,8 +604,12 @@ class Loader {
 		$key_generator   = new \Timber\Cache\KeyGenerator();
 		$cache_provider  = new \Timber\Cache\WPObjectCacheAdapter($this);
 		$cache_lifetime  = apply_filters('timber/cache/extension/lifetime', 0);
-		$cache_strategy  = new \Twig\CacheExtension\CacheStrategy\GenerationalCacheStrategy($cache_provider, $key_generator, $cache_lifetime);
-		$cache_extension = new \Twig\CacheExtension\Extension($cache_strategy);
+		$cache_strategy  = new CacheExtension\CacheStrategy\GenerationalCacheStrategy(
+			$cache_provider,
+			$key_generator,
+			$cache_lifetime
+		);
+		$cache_extension = new CacheExtension\Extension($cache_strategy);
 
 		return $cache_extension;
 	}
@@ -333,7 +662,7 @@ class Loader {
 			$expires = 0;
 		}
 
-		$cache_mode = self::_get_cache_mode($cache_mode);
+		$cache_mode = $this->_get_cache_mode($cache_mode);
 		$trans_key = substr($group.'_'.$key, 0, self::TRANS_KEY_LEN);
 
 		if ( self::CACHE_TRANSIENT === $cache_mode ) {

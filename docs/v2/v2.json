@@ -1,0 +1,48 @@
+{
+  "version": "v2",
+  "layout": "page",
+  "nav": {
+    "installation": {
+      "name": "Installation",
+      "slug": "installation",
+      "url": "/installation/"
+    },
+    "getting-started": {
+      "name": "Getting Started",
+      "slug": "getting-started",
+      "url": "/getting-started/"
+    },
+    "guides": {
+      "name": "Guides",
+      "slug": "guides",
+      "url": "/guides/"
+    },
+    "reference": {
+      "name": "Reference",
+      "slug": "reference",
+      "url": "/reference/"
+    },
+    "hooks": {
+      "name": "Hooks",
+      "slug": "hooks",
+      "url": "/hooks/"
+    },
+    "integrations": {
+      "name": "Integrations",
+      "slug": "integrations",
+      "url": "/integrations/"
+    },
+    "upgrade-guides": {
+      "name": "Upgrade Guides",
+      "slug": "upgrade-guides",
+      "url": "/upgrade-guides/"
+    },
+    "contributing": {
+      "name": "Contributing",
+      "slug": "contributing",
+      "url": "/contributing/"
+    }
+  }
+}
+
+

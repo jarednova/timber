@@ -9,6 +9,11 @@ namespace Timber;
 class PostType {
 
 	/**
+	 * @var string
+	 */
+	private $slug;
+
+	/**
 	 * @param string $post_type
 	 */
 	public function __construct( $post_type ) {

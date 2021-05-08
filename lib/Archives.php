@@ -2,15 +2,18 @@
 
 namespace Timber;
 
-use Timber\Core;
-use Timber\URLHelper;
-
 /**
- * The TimberArchives class is used to generate a menu based on the date archives of your posts. The [Nieman Foundation News site](http://nieman.harvard.edu/news/) has an example of how the output can be used in a real site ([screenshot](https://cloud.githubusercontent.com/assets/1298086/9610076/3cdca596-50a5-11e5-82fd-acb74c09c482.png)).
+ * Class Archive
  *
+ * The `Timber\Archives` class is used to generate a menu based on the date archives of your posts.
+ *
+ * The [Nieman Foundation News site](http://nieman.harvard.edu/news/) has an example of how the
+ * output can be used in a real site ([screenshot](https://cloud.githubusercontent.com/assets/1298086/9610076/3cdca596-50a5-11e5-82fd-acb74c09c482.png)).
+ *
+ * @api
  * @example
  * ```php
- * $context['archives'] = new TimberArchives( $args );
+ * $context['archives'] = new Timber\Archives( $args );
  * ```
  * ```twig
  * <ul>
@@ -38,49 +41,69 @@ use Timber\URLHelper;
  * ```
  */
 class Archives extends Core {
-	
+
+	/**
+	 * @var array Preserves arguments sent with the constructor for possible later use when
+	 * displaying items.
+	 */
+	protected $args;
+
+	/**
+	 * URL prefix.
+	 *
+	 * @api
+	 * @var string
+	 */
 	public $base = '';
+
 	/**
 	 * @api
-	 * @var array the items of the archives to iterate through and markup for your page
+	 * @var array The items of the archives to iterate through and markup for your page.
 	 */
 	public $items;
 
 	/**
+	 * Build an Archives menu
+	 *
 	 * @api
-	 * @param $args array of arguments {
-	 *     @type bool show_year => false
-	 *     @type string
-	 *     @type string type => 'monthly-nested'
-	 *     @type int limit => -1
-	 *     @type bool show_post_count => false
-	 *     @type string order => 'DESC'
-	 *     @type string post_type => 'post'
-	 *     @type bool show_year => false
-	 *     @type bool nested => false
+	 * @param array  $args {
+	 *      Optional. Array of arguments.
+	 *
+	 *      @type bool   $show_year => false
+	 *      @type string
+	 *      @type string $type => 'monthly-nested'
+	 *      @type int    $limit => -1
+	 *      @type bool   $show_post_count => false
+	 *      @type string $order => 'DESC'
+	 *      @type string $post_type => 'post'
+	 *      @type bool   $show_year => false
+	 *      @type bool   $nested => false
 	 * }
-	 * @param string $base any additional paths that need to be prepended to the URLs that are generated, for example: "tags"
+	 * @param string $base Any additional paths that need to be prepended to the URLs that are
+	 *                     generated, for example: "tags". Default ''.
 	 */
 	public function __construct( $args = null, $base = '' ) {
-
-
 		$this->init($args, $base);
 	}
 
 	/**
+	 * Initialize the Archives
+	 *
 	 * @internal
 	 * @param array|string $args
-	 * @param string $base
+	 * @param string       $base
 	 */
 	public function init( $args = null, $base = '' ) {
 		$this->base = $base;
-		$this->items = $this->get_items($args);
+		$this->items = $this->items($args);
+		$this->args = $args;
 	}
 
 	/**
 	 * @internal
 	 * @param string $url
 	 * @param string $text
+	 * @param int    $post_count
 	 * @return mixed
 	 */
 	protected function get_archives_link( $url, $text, $post_count = 0 ) {
@@ -95,7 +118,7 @@ class Archives extends Core {
 
 	/**
 	 * @internal
-	 * @param array $args
+	 * @param array  $args
 	 * @param string $last_changed
 	 * @param string $join
 	 * @param string $where
@@ -179,11 +202,25 @@ class Archives extends Core {
 	}
 
 	/**
+	 * Gets archive items.
+	 *
 	 * @api
-	 * @param array|string $args
+	 * @deprecated 2.0.0, use `{{ archives.items }}` instead.
+	 * @see \Timber\Archives::items()
 	 * @return array|string
 	 */
 	public function get_items( $args = null ) {
+		Helper::warn( '{{ archives.get_items }} is deprecated. Use {{ archives.items }} instead.' );
+
+		return $this->items($args);
+	}
+
+	/**
+	 * @api
+	 * @param array|string $args Optional. Array of arguments.
+	 * @return array|string
+	 */
+	public function items( $args = null ) {
 		global $wpdb;
 
 		$defaults = array(
@@ -195,6 +232,10 @@ class Archives extends Core {
 			'show_year' => false,
 			'nested' => false
 		);
+
+		if ( $args === null ) {
+			$args = $this->args;
+		}
 
 		$args = wp_parse_args($args, $defaults);
 		$post_type = $args['post_type'];
@@ -238,7 +279,15 @@ class Archives extends Core {
 		}
 
 		$where = $wpdb->prepare('WHERE post_type = "%s" AND post_status = "publish"', $post_type);
+
+		/**
+		 * @link https://developer.wordpress.org/reference/hooks/getarchives_where/
+		 */
 		$where = apply_filters('getarchives_where', $where, $args);
+
+		/**
+		 * @link https://developer.wordpress.org/reference/hooks/getarchives_join/
+		 */
 		$join = apply_filters('getarchives_join', '', $args);
 
 		$output = array();

@@ -3,7 +3,7 @@
 	class TimberBenchmark {
 
 		static function testLoader(){
-			$TimberLoader = new TimberLoader();
+			$TimberLoader = new Timber\Loader();
 			for ($i = 0; $i<5000; $i++){
 				$loader = $TimberLoader->get_loader();
 			}
@@ -18,7 +18,7 @@
 			}
 			for ($i = 0; $i<20; $i++){
 				$upload_dir = wp_upload_dir();
-				$img = TimberImageHelper::resize($upload_dir['url'].'/arch.jpg', 500, 200, 'default', true);
+				$img = Timber\ImageHelper::resize($upload_dir['url'].'/arch.jpg', 500, 200, 'default', true);
 			}
 		}
 

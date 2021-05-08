@@ -2,16 +2,24 @@
 
 namespace Timber;
 
-use Timber\User;
-use Timber\Core;
-use Timber\CoreInterface;
+use WP_Comment;
 
 /**
- * The Timber\Comment class is used to view the output of comments. 99% of the time this will be in the context of the comments on a post. However you can also fetch a comment directly using its comment ID.
+ * Class Comment
+ *
+ * The `Timber\Comment` class is used to view the output of comments. 99% of the time this will be
+ * in the context of the comments on a post. However you can also fetch a comment directly using its
+ * comment ID.
+ *
+ * @api
  * @example
  * ```php
- * $comment = new Timber\Comment($comment_id);
- * $context['comment_of_the_day'] = $comment;
+ * $comment = Timber::get_comment( $comment_id );
+ *
+ * $context = [
+ *     'comment_of_the_day' => $comment
+ * ];
+ *
  * Timber::render('index.twig', $context);
  * ```
  *
@@ -25,33 +33,110 @@ use Timber\CoreInterface;
  * <p class="comment-attribution">- Sullivan Ballou</p>
  * ```
  */
-class Comment extends Core implements CoreInterface {
+class Comment extends Core implements CoreInterface, MetaInterface {
 
-	public $PostClass = 'Post';
 	public $object_type = 'comment';
 
 	public static $representation = 'comment';
 
+	/**
+	 * @api
+	 * @var int
+	 */
 	public $ID;
+
+	/**
+	 * @api
+	 * @var int
+	 */
 	public $id;
+
+	/**
+	 * @var int
+	 */
+	public $comment_approved;
+
+	/**
+	 * @api
+	 * @var string
+	 */
 	public $comment_author_email;
+
+	/**
+	 * @api
+	 * @var string
+	 */
 	public $comment_content;
+
+	/**
+	 * @api
+	 * @var string
+	 */
 	public $comment_date;
+
+	/**
+	 * @api
+	 * @var int
+	 */
 	public $comment_ID;
+
+	/**
+	 * @var int
+	 */
+	public $comment_parent;
+
+	/**
+	 * @api
+	 * @var int
+	 */
 	public $user_id;
+
+	/**
+	 * @api
+	 * @var int
+	 */
 	public $post_id;
+
+	/**
+	 * @api
+	 * @var string
+	 */
 	public $comment_author;
+
 	public $_depth = 0;
 
 	protected $children = array();
 
 	/**
-	 * @param int $cid
+	 * Construct a Timber\Comment. This is protected to prevent direct instantiation,
+	 * which is no longer supported. Use `Timber::get_comment()` instead.
+	 *
+	 * @internal
 	 */
-	public function __construct( $cid ) {
-		$this->init($cid);
+	protected function __construct() {
 	}
 
+	/**
+	 * Build a Timber\Comment. Do not call this directly. Use `Timber::get_comment()` instead.
+	 *
+	 * @internal
+	 * @param \WP_Comment $wp_comment a native WP_Comment instance
+	 */
+	public static function build( WP_Comment $wp_comment ) : self {
+		$comment = new static();
+		$comment->import($wp_comment);
+		$comment->ID = $wp_comment->comment_ID;
+		$comment->id = $wp_comment->comment_ID;
+
+		return $comment;
+	}
+
+	/**
+	 * Gets the content.
+	 *
+	 * @api
+	 * @return string
+	 */
 	public function __toString() {
 		return $this->content();
 	}
@@ -68,18 +153,18 @@ class Comment extends Core implements CoreInterface {
 		$this->import($comment_data);
 		$this->ID = $this->comment_ID;
 		$this->id = $this->comment_ID;
-		$comment_meta_data = $this->get_meta_fields($this->ID);
-		$this->import($comment_meta_data);
 	}
 
 	/**
+	 * Gets the author.
+	 *
 	 * @api
 	 * @example
 	 * ```twig
 	 * <h3>Comments by...</h3>
 	 * <ol>
 	 * {% for comment in post.comments %}
-	 *     <li>{{comment.author.name}}, who has the following roles: {{comment.author.roles|join(', ')}}</li>
+	 *     <li>{{comment.author.name}}, who is a {{comment.author.roles[0]}}</li>
 	 * {% endfor %}
 	 * </ol>
 	 * ```
@@ -95,20 +180,19 @@ class Comment extends Core implements CoreInterface {
 	 */
 	public function author() {
 		if ( $this->user_id ) {
-			return new User($this->user_id);
+			return Timber::get_user($this->user_id);
 		} else {
-			$author = new User(0);
-			if ( isset($this->comment_author) && $this->comment_author ) {
-				$author->name = $this->comment_author;
-			} else {
-				$author->name = 'Anonymous';
-			}
+			// We can't (and shouldn't) construct a full-blown User object,
+			// so just return a stdclass inst with a name
+			return (object) [
+				'name' => $this->comment_author ?: 'Anonymous',
+			];
 		}
-		return $author;
 	}
 
 	/**
-	 * Fetches the Gravatar
+	 * Fetches the Gravatar.
+	 *
 	 * @api
 	 * @example
 	 * ```twig
@@ -117,8 +201,8 @@ class Comment extends Core implements CoreInterface {
 	 * ```html
 	 * <img src="http://gravatar.com/i/sfsfsdfasdfsfa.jpg" alt="Image of Katherine Rich" />
 	 * ```
-	 * @param int $size
-	 * @param string $default
+	 * @param int|mixed    $size     Size of avatar.
+	 * @param string       $default  Default avatar URL.
 	 * @return bool|mixed|string
 	 */
 	public function avatar( $size = 92, $default = '' ) {
@@ -152,6 +236,8 @@ class Comment extends Core implements CoreInterface {
 	}
 
 	/**
+	 * Gets the content.
+	 *
 	 * @api
 	 * @return string
 	 */
@@ -160,6 +246,8 @@ class Comment extends Core implements CoreInterface {
 	}
 
 	/**
+	 * Gets the comment children.
+	 *
 	 * @api
 	 * @return array Comments
 	 */
@@ -168,17 +256,21 @@ class Comment extends Core implements CoreInterface {
 	}
 
 	/**
-	 * @param Comment $child_comment;
+	 * Adds a child.
+	 *
+	 * @api
+	 * @param \Timber\Comment $child_comment Comment child to add.
+	 * @return array Comment children.
 	 */
 	public function add_child( Comment $child_comment ) {
-		if ( !is_array($this->children) ) {
-			$this->children = array();
-		}
 		return $this->children[] = $child_comment;
 	}
 
 	/**
-	 * @param int $depth
+	 * Updates the comment depth.
+	 *
+	 * @api
+	 * @param int $depth Level of depth.
 	 */
 	public function update_depth( $depth = 0 ) {
 		$this->_depth = $depth;
@@ -189,18 +281,26 @@ class Comment extends Core implements CoreInterface {
 		}
 	}
 
+	/**
+	 * At what depth is this comment?
+	 *
+	 * @api
+	 * @return int
+	 */
 	public function depth() {
 		return $this->_depth;
 	}
 
 	/**
+	 * Is the comment approved?
+	 *
 	 * @api
 	 * @example
 	 * ```twig
 	 * {% if comment.approved %}
-	 * 	Your comment is good
+	 *   Your comment is good
 	 * {% else %}
-	 * 	Do you kiss your mother with that mouth?
+	 *   Do you kiss your mother with that mouth?
 	 * {% endif %}
 	 * ```
 	 * @return boolean
@@ -210,6 +310,8 @@ class Comment extends Core implements CoreInterface {
 	}
 
 	/**
+	 * The date for the comment.
+	 *
 	 * @api
 	 * @example
 	 * ```twig
@@ -226,6 +328,7 @@ class Comment extends Core implements CoreInterface {
 	 *   <p class="comment">Happy Birthday!</p>
 	 * </article>
 	 * ```
+	 * @param string $date_format of desired PHP date format (eg "M j, Y").
 	 * @return string
 	 */
 	public function date( $date_format = '' ) {
@@ -235,6 +338,8 @@ class Comment extends Core implements CoreInterface {
 	}
 
 	/**
+	 * What time was the comment posted?
+	 *
 	 * @api
 	 * @example
 	 * ```twig
@@ -251,6 +356,7 @@ class Comment extends Core implements CoreInterface {
 	 *   <p class="comment">Happy Birthday!</p>
 	 * </article>
 	 * ```
+	 * @param string $time_format of desired PHP time format (eg "H:i:s").
 	 * @return string
 	 */
 	public function time( $time_format = '' ) {
@@ -260,14 +366,27 @@ class Comment extends Core implements CoreInterface {
 	}
 
 	/**
-	 * @param string $field_name
-	 * @return mixed
+	 * Gets a comment meta value.
+	 *
+	 * @api
+	 * @deprecated 2.0.0, use `{{ comment.meta('field_name') }}` instead.
+	 *
+	 * @param string $field_name The field name for which you want to get the value.
+	 * @return mixed The meta field value.
 	 */
-	public function meta( $field_name ) {
-		return $this->get_meta_field($field_name);
+	public function get_meta_field( $field_name ) {
+		Helper::deprecated(
+			"{{ comment.get_meta_field('field_name') }}",
+			"{{ comment.meta('field_name') }}",
+			'2.0.0'
+		);
+
+		return $this->meta($field_name);
 	}
 
 	/**
+	 * Checks if the comment is a child.
+	 *
 	 * @api
 	 * @return bool
 	 */
@@ -276,45 +395,205 @@ class Comment extends Core implements CoreInterface {
 	}
 
 	/**
-	 * @internal
-	 * @param int $comment_id
-	 * @return mixed
+	 * Gets a comment meta value.
+	 *
+	 * Returns a meta value for a comment that’s saved in the comment meta database table.
+	 *
+	 * @api
+	 *
+	 * @param string $field_name The field name for which you want to get the value.
+	 * @param array  $args       An array of arguments for getting the meta value. Third-party
+	 *                           integrations can use this argument to make their API arguments
+	 *                           available in Timber. Default empty.
+	 * @return mixed The meta field value. Null if no value could be found.
 	 */
-	protected function get_meta_fields( $comment_id = null ) {
-		if ( $comment_id === null ) {
-			$comment_id = $this->ID;
+	public function meta( $field_name = '', $args = array() ) {
+		$args = wp_parse_args( $args, [
+			'apply_filters' => true,
+		] );
+
+		$comment_meta = null;
+
+		if ( $args['apply_filters'] ) {
+			/**
+			 * Filters the value for a comment meta field before it is fetched from the database.
+			 *
+			 * @todo  Add description, example
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param string          $comment_meta The field value. Passing a non-null value will
+			 *                                      skip fetching the value from the database.
+			 *                                      Default null.
+			 * @param int             $comment_id   The comment ID.
+			 * @param string          $field_name   The name of the meta field to get the value for.
+			 * @param \Timber\Comment $comment      The comment object.
+			 * @param array           $args         An array of arguments.
+			 */
+			$comment_meta = apply_filters(
+				'timber/comment/pre_meta',
+				null,
+				$this->ID,
+				$field_name,
+				$this,
+				$args
+			);
+
+			/**
+			 * Filters the value for a comment meta field before it is fetched from the database.
+			 *
+			 * @deprecated 2.0.0, use `timber/comment/pre_meta`
+			 */
+			$comment_meta = apply_filters_deprecated(
+				'timber_comment_get_meta_field_pre',
+				array( $comment_meta, $this->ID, $field_name, $this ),
+				'2.0.0',
+				'timber/comment/pre_meta'
+			);
+
+			/**
+			 * Fires before comment meta data is imported into the object.
+			 *
+			 * @deprecated 2.0.0, use `timber/comment/pre_meta`
+			 * @since      0.19.1 Switched from filter to action functionality.
+			 * @since      0.15.4
+			 */
+			do_action_deprecated(
+				'timber_comment_get_meta_pre',
+				array( $comment_meta, $this->ID ),
+				'2.0.0',
+				'timber/comment/pre_meta'
+			);
 		}
-		//Could not find a WP function to fetch all comment meta data, so I made one.
-		apply_filters('timber_comment_get_meta_pre', array(), $comment_id);
-		$comment_metas = get_comment_meta($comment_id);
-		foreach ( $comment_metas as &$cm ) {
-			if ( is_array($cm) && count($cm) == 1 ) {
-				$cm = $cm[0];
+
+		if ( null === $comment_meta ) {
+			$comment_meta = get_comment_meta( $this->ID, $field_name, true );
+
+			// Mimick $single argument when fetching all meta values.
+			if ( empty( $field_name ) && is_array( $comment_meta ) && ! empty( $comment_meta ) ) {
+				$comment_meta = array_map( function( $meta ) {
+					if ( 1 === count( $meta ) && isset( $meta[0] ) ) {
+						return $meta[0];
+					}
+
+					return $meta;
+				}, $comment_meta );
+			}
+
+			// Empty result.
+			if ( empty( $comment_meta ) ) {
+				$comment_meta = empty( $field_name ) ? [] : null;
 			}
 		}
-		$comment_metas = apply_filters('timber_comment_get_meta', $comment_metas, $comment_id);
-		return $comment_metas;
-	}
 
-	/**
-	 *
-	 * @internal
-	 * @param string $field_name
-	 * @return mixed
-	 */
-	protected function get_meta_field( $field_name ) {
-		$value = apply_filters('timber_comment_get_meta_field_pre', null, $this->ID, $field_name, $this);
-		if ( $value === null ) {
-			$value = get_comment_meta($this->ID, $field_name, true);
+		if ( $args['apply_filters'] ) {
+			/**
+			 * Filters the value for a comment meta field.
+			 *
+			 * @todo  Add description, example
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param string          $comment_meta The field value.
+			 * @param int             $comment_id   The comment ID.
+			 * @param string          $field_name   The name of the meta field to get the value for.
+			 * @param \Timber\Comment $comment      The comment object.
+			 * @param array           $args         An array of arguments.
+			 */
+			$comment_meta = apply_filters(
+				'timber/comment/meta',
+				$comment_meta,
+				$this->ID,
+				$field_name,
+				$this,
+				$args
+			);
+
+			/**
+			 * Filters comment meta data fetched from the database.
+			 *
+			 * @deprecated 2.0.0, use `timber/comment/meta`
+			 * @since 0.15.4
+			 */
+			$comment_meta = apply_filters_deprecated(
+				'timber_comment_get_meta',
+				array( $comment_meta, $this->ID ),
+				'2.0.0',
+				'timber/comment/meta'
+			);
+
+			/**
+			 * Filters the value for a comment meta field.
+			 *
+			 * @deprecated 2.0.0, use `timber/comment/meta`
+			 */
+			$comment_meta = apply_filters_deprecated(
+				'timber_comment_get_meta_field',
+				array( $comment_meta, $this->ID, $field_name, $this ),
+				'2.0.0',
+				'timber/comment/meta'
+			);
 		}
-		$value = apply_filters('timber_comment_get_meta_field', $value, $this->ID, $field_name, $this);
-		return $value;
+
+		return $comment_meta;
 	}
 
 	/**
-	 * Enqueue the WP threaded comments javascript,
-	 * and fetch the reply link for various comments.
+	 * Gets a comment meta value directly from the database.
+	 *
+	 * Returns a raw meta value or all raw meta values saved in the comment meta database table. In
+	 * comparison to `meta()`, this function will return raw values that are not filtered by third-
+	 * party plugins.
+	 *
+	 * Fetching raw values for all custom fields will not have a big performance impact, because
+	 * WordPress gets all meta values, when the first meta value is accessed.
+	 *
 	 * @api
+	 * @since 2.0.0
+	 *
+	 * @param string $field_name Optional. The field name for which you want to get the value. If
+	 *                           no field name is provided, this function will fetch values for all
+	 *                           custom fields. Default empty string.
+	 * @param array  $args       Optional. An array of args for `Comment::meta()`. Default empty
+	 *                           array.
+	 *
+	 * @return null|mixed The meta field value(s). Null if no value could be found, an empty array
+	 *                    if all fields were requested but no values could be found.
+	 */
+	public function raw_meta( $field_name = '', $args = array() ) {
+		return $this->meta( $field_name, array_merge(
+			$args,
+			[
+				'apply_filters' => false,
+			]
+		) );
+	}
+
+	/**
+	 * Gets a comment meta value.
+	 *
+	 * @api
+	 * @deprecated 2.0.0, use `{{ comment.meta('field_name') }}` instead.
+	 * @see \Timber\Comment::meta()
+	 *
+	 * @param string $field_name The field name for which you want to get the value.
+	 * @return mixed The meta field value.
+	 */
+	public function get_field( $field_name = null ) {
+		Helper::deprecated(
+			"{{ comment.get_field('field_name') }}",
+			"{{ comment.meta('field_name') }}",
+			'2.0.0'
+		);
+
+		return $this->meta( $field_name );
+	}
+
+	/**
+	 * Enqueue the WP threaded comments JavaScript, and fetch the reply link for various comments.
+	 *
+	 * @api
+	 * @param string $reply_text Text of the reply link.
 	 * @return string
 	 */
 	public function reply_link( $reply_text = 'Reply' ) {

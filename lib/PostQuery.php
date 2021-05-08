@@ -2,18 +2,26 @@
 
 namespace Timber;
 
-use Timber\Helper;
-use Timber\Post;
-use Timber\PostGetter;
+use ArrayObject;
+use JsonSerializable;
+use WP_Post;
+use WP_Query;
 
 /**
- * A PostQuery allows a user to query for a Collection of WordPress Posts.
- * PostCollections are used directly in Twig templates to iterate through and retrieve
- * meta information about the collection of posts
+ * Class PostQuery
+ *
+ * Query for a collection of WordPress posts.
+ *
+ * This is the equivalent of using `WP_Query` in normal WordPress development.
+ *
+ * PostQuery is used directly in Twig templates to iterate through post query results and
+ * retrieve meta information about them.
+ *
  * @api
- * @package Timber
  */
-class PostQuery extends PostCollection {
+class PostQuery extends ArrayObject implements PostCollectionInterface, JsonSerializable {
+	use AccessesPostsLazily;
+
 	/**
 	 * Found posts.
 	 *
@@ -24,48 +32,145 @@ class PostQuery extends PostCollection {
 	 * @since 1.11.1
 	 * @var int The amount of posts found in the query.
 	 */
-	public $found_posts = null;
+	public    $found_posts = null;
 
+	/**
+	 * If the user passed an array, it is stored here.
+	 *
+	 * @var array
+	 */
 	protected $userQuery;
+
+	/**
+	 * The internal WP_Query instance that this object is wrapping.
+	 *
+	 * @var \WP_Query
+	 */
+	protected $wp_query = null;
+
+	/**
+	 * @var PostCollection|QueryIterator
+	 */
 	protected $queryIterator;
+
 	protected $pagination = null;
 
 	/**
-	 * @param mixed   	$query
-	 * @param string 	$post_class
-	 */
-	public function __construct( $query = false, $post_class = '\Timber\Post' ) {
-		$this->userQuery = $query;
-		$this->queryIterator = PostGetter::query_posts($query, $post_class);
-
-		if ( $this->queryIterator instanceof QueryIterator ) {
-			$this->found_posts = $this->queryIterator->found_posts();
-		}
-
-		$posts = $this->queryIterator->get_posts();
-
-		parent::__construct($posts, $post_class);
-	}
-
-	/**
-	 * @return mixed the query the user orignally passed
-	 * to the pagination object
-	 */
-	protected function get_query() {
-		return $this->userQuery;
-	}
-
-	/**
-	 * Set pagination for the collection. Optionally could be used to get pagination with custom preferences.
+	 * Query for a collection of WordPress posts.
 	 *
-	 * @param 	array $prefs
-	 * @return 	Timber\Pagination object
+	 * Refer to the official documentation for
+	 * [WP_Query](https://developer.wordpress.org/reference/classes/wp_query/) for a list of all
+	 * the arguments that can be used for the `$query` parameter.
+	 *
+	 * @api
+	 * @todo update these docs
+	 * @example
+	 * ```php
+	 * // Get posts from default query
+	 * global $wp_query;
+	 * $posts = Timber::get_posts( $wp_query );
+	 *
+	 * // Using the WP_Query argument format
+	 * $posts = Timber::get_posts( [
+	 *     'post_type'     => 'article',
+	 *     'category_name' => 'sports',
+	 * ] );
+	 *
+	 * // Passing a WP_Query instance
+	 * $posts = Timber::get_posts( new WP_Query( 'post_type=any' ) );
+	 * ```
+	 *
+	 * @param WP_Query $query The WP_Query object to wrap.
+	 */
+	public function __construct( WP_Query $query ) {
+		$this->wp_query    = $query;
+		$this->found_posts = $this->wp_query->found_posts;
+
+		$posts = $this->wp_query->posts ?: [];
+
+		parent::__construct( $posts, 0, PostsIterator::class );
+	}
+
+	/**
+	 * Get pagination for a post collection.
+	 *
+	 * Refer to the [Pagination Guide]({{< relref "../guides/pagination.md" >}}) for a detailed usage example.
+	 *
+	 * Optionally could be used to get pagination with custom preferences.
+	 *
+	 * @api
+	 * @example
+	 * ```twig
+	 * {% if posts.pagination.prev %}
+	 *     <a href="{{ posts.pagination.prev.link }}">Prev</a>
+	 * {% endif %}
+	 *
+	 * <ul class="pages">
+	 *     {% for page in posts.pagination.pages %}
+	 *         <li>
+	 *             <a href="{{ page.link }}" class="{{ page.class }}">{{ page.title }}</a>
+	 *         </li>
+	 *     {% endfor %}
+	 * </ul>
+	 *
+	 * {% if posts.pagination.next %}
+	 *     <a href="{{ posts.pagination.next.link }}">Next</a>
+	 * {% endif %}
+	 * ```
+	 *
+	 * @param array $prefs Optional. Custom preferences. Default `array()`.
+	 *
+	 * @return \Timber\Pagination object
 	 */
 	public function pagination( $prefs = array() ) {
 		if ( !$this->pagination && is_a($this->queryIterator, 'Timber\QueryIterator') ) {
-			$this->pagination = $this->queryIterator->get_pagination($prefs, $this->get_query());
+			$this->pagination = $this->queryIterator->get_pagination($prefs, $this->userQuery);
+		} elseif ( !$this->pagination && $this->wp_query instanceof WP_Query ) {
+			$this->pagination = new Pagination($prefs, $this->wp_query);
 		}
+
 		return $this->pagination;
+	}
+
+	/**
+	 * Override data printed by var_dump() and similar. Realizes the collection before
+	 * returning. Due to a PHP bug, this only works in PHP >= 7.4.
+	 *
+	 * @see https://bugs.php.net/bug.php?id=69264
+	 * @internal
+	 */
+	public function __debugInfo() {
+		return [
+			'info' => sprintf( '
+********************************************************************************
+
+    This output is generated by %s().
+
+    The properties you see here are not actual properties, but only debug
+    output. If you want to access the actual instances of Timber\Posts, loop
+		over the collection or get all posts through $query->to_array().
+
+		More info: https://timber.github.io/docs/v2/guides/posts/#debugging-post-collections
+
+********************************************************************************',
+				__METHOD__
+			),
+			'posts'       => $this->getArrayCopy(),
+			'wp_query'    => $this->wp_query,
+			'found_posts' => $this->found_posts,
+			'pagination'  => $this->pagination,
+			'factory'     => $this->factory,
+			'iterator'    => $this->getIterator(),
+		];
+	}
+
+	/**
+	 * Returns realized (eagerly instantiated) Timber\Post data to serialize to JSON.
+	 *
+	 * @internal
+	 */
+	public function jsonSerialize() {
+		return $this->getArrayCopy();
 	}
 
 }

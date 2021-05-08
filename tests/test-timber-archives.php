@@ -8,7 +8,7 @@
 				$this->factory->post->create(array('post_date' => $date.' 19:46:41'));
 			}
 			$this->go_to('/');
-			$archives = new TimberArchives(array('type' => 'monthly', 'show_year' => false, 'limit' => 3));
+			$archives = new Timber\Archives(array('type' => 'monthly', 'show_year' => false, 'limit' => 3));
 			$this->assertEquals(3, count($archives->items));
 			$this->assertEquals(2, $archives->items[1]['post_count']);
 		}
@@ -20,11 +20,11 @@
 				$this->factory->post->create(array('post_date' => $date.' 19:46:41'));
 			}
 			$this->go_to('/');
-			$archives = new TimberArchives(array('type' => 'monthly', 'show_year' => false));
+			$archives = new Timber\Archives(array('type' => 'monthly', 'show_year' => false));
 			$this->assertEquals('December', $archives->items[0]['name']);
 			$this->assertEquals(3, count($archives->items));
 			$this->assertEquals(2, $archives->items[1]['post_count']);
-			$archives = new TimberArchives(array('type' => 'monthly', 'show_year' => true));
+			$archives = new Timber\Archives(array('type' => 'monthly', 'show_year' => true));
 			$this->assertEquals('December 2013', $archives->items[0]['name']);
 		}
 
@@ -34,7 +34,7 @@
 				$this->factory->post->create(array('post_date' => $date.' 19:46:41'));
 			}
 			$this->go_to('/');
-			$archives = new TimberArchives(array('type' => 'yearly', 'show_year' => false));
+			$archives = new Timber\Archives(array('type' => 'yearly', 'show_year' => false));
 			$this->assertEquals(3, count($archives->items));
 			$this->assertEquals(2, $archives->items[2]['post_count']);
 		}
@@ -46,7 +46,7 @@
 				$this->factory->post->create(array('post_date' => $date.' 19:46:41'));
 			}
 			$this->go_to('/');
-			$archives = new TimberArchives(array('type' => 'daily'));
+			$archives = new Timber\Archives(array('type' => 'daily'));
 			$this->assertEquals(5, count($archives->items));
 			$this->assertEquals(2, $archives->items[2]['post_count']);
 		}
@@ -58,11 +58,11 @@
 				$this->factory->post->create(array('post_date' => $date.' 19:46:41'));
 			}
 			$this->go_to('/');
-			$archives = new TimberArchives(array('type' => 'monthly-nested'));
+			$archives = new Timber\Archives(array('type' => 'monthly-nested'));
 			$this->assertEquals(2, count($archives->items));
 			$this->assertEquals(4, $archives->items[1]['post_count']);
 			$this->assertEquals(2, $archives->items[1]['children'][1]['post_count']);
-			$archives = new TimberArchives(array('type' => 'yearlymonthly'));
+			$archives = new Timber\Archives(array('type' => 'yearlymonthly'));
 			$this->assertEquals(2, count($archives->items));
 			$this->assertEquals(4, $archives->items[1]['post_count']);
 			$this->assertEquals(2, $archives->items[1]['children'][1]['post_count']);
@@ -75,7 +75,7 @@
 				$this->factory->post->create(array('post_date' => $date.' 19:46:41'));
 			}
 			$this->go_to('/');
-			$archives = new TimberArchives(array('type' => 'weekly'));
+			$archives = new Timber\Archives(array('type' => 'weekly'));
 			$this->assertEquals(3, count($archives->items));
 			$this->assertEquals(3, $archives->items[0]['post_count']);
 		}
@@ -91,7 +91,7 @@
 				$this->factory->post->create(array('post_date' => $post['date'].' 19:46:41', 'post_title' => $post['post_title']));
 			}
 			$this->go_to('/');
-			$archives = new TimberArchives(array('type' => 'alpha'));
+			$archives = new Timber\Archives(array('type' => 'alpha'));
 			$this->assertEquals(4, count($archives->items));
 			$this->assertEquals('Quack Quack', $archives->items[3]['name']);
 		}
@@ -109,10 +109,10 @@
 				$this->factory->post->create(array('post_date' => $date. ' 19:46:41', 'post_type' => 'book'));
 			}
 			$this->go_to('/');
-			$archives = new TimberArchives();
+			$archives = new Timber\Archives();
 
 			$this->assertEquals(2, count($archives->items));
-			$archives = new TimberArchives(array('post_type' => 'book', 'type' => 'monthly'));
+			$archives = new Timber\Archives(array('post_type' => 'book', 'type' => 'monthly'));
 			$this->assertEquals(5, count($archives->items));
 		}
 

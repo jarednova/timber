@@ -24,7 +24,7 @@ class TestTimberImageIsolated extends Timber_UnitTestCase {
 		$file_loc = self::copyTestImage( 'eastern.jpg' );
 		$upload_dir = wp_upload_dir();
 		$url_src = $upload_dir['url'].'/eastern.jpg';
-		$filename = TimberImageHelper::get_resize_file_url( $url_src, 300, 500, 'default' );
+		$filename = Timber\ImageHelper::get_resize_file_url( $url_src, 300, 500, 'default' );
 		$this->assertEquals($upload_dir['url'].'/eastern-300x500-c-default.jpg', $filename );
 	}
 }

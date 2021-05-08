@@ -1,5 +1,14 @@
 <?php
 
+require_once(__DIR__.'/php/timber-post-subclass.php');
+
+use Timber\PostArrayObject;
+
+	/**
+	 * @group posts-api
+	 * @group terms-api
+	 * @group users-api
+	 */
 	class TestTimberHelper extends Timber_UnitTestCase {
 
 		function testPluckArray() {
@@ -34,20 +43,16 @@
 		}
 
 		function testPluckObjectWithMethod() {
-			require_once(__DIR__.'/php/timber-post-subclass.php');
-			$tps = new TimberPostSubclass();
+			$this->register_post_classmap_temporarily([
+				'post' => TimberPostSubclass::class,
+			]);
+
+			$tps = Timber::get_post($this->factory->post->create());
 			$jimmy = new stdClass();
 			$jimmy->name = 'Jimmy';
 			$pumpkins = array($tps, $jimmy);
 			$bar = \Timber\Helper::pluck($pumpkins, 'foo');
 			$this->assertEquals(array('bar'), $bar);
-		}
-
-		function testCommentFormPHP() {
-			$post_id = $this->factory->post->create();
-			$form = TimberHelper::get_comment_form($post_id);
-			$form = trim($form);
-			$this->assertStringStartsWith('<div id="respond"', $form);
 		}
 
 		function testTrimCharacters() {
@@ -58,15 +63,15 @@
 
 		function testCloseTagsWithSelfClosingTags(){
 			$p = '<p>My thing is this <hr>Whatever';
-			$html = \Timber\Helper::close_tags($p);
+			$html = \Timber\TextHelper::close_tags($p);
 			$this->assertEquals('<p>My thing is this <hr />Whatever</p>', $html);
 		}
 
 		function testCommentForm() {
 			$post_id = $this->factory->post->create();
-			global $post;
+      global $post;
 			$post = get_post($post_id);
-			$form = TimberHelper::ob_function( 'comment_form', array( array(), $post_id ) );
+			$form = Timber\Helper::ob_function( 'comment_form', array( array(), $post_id ) );
 			$form = trim($form);
 			$this->assertStringStartsWith('<div id="respond"', $form);
 		}
@@ -75,7 +80,7 @@
         	//since we're testing with twentyfourteen -- need to remove its filters on wp_title
         	remove_all_filters('wp_title');
             remove_theme_support( 'title-tag' );
-        	$this->assertEquals('', TimberHelper::get_wp_title());
+        	$this->assertEquals('', Timber\Helper::get_wp_title());
         }
 
         function testWPTitleSingle(){
@@ -84,7 +89,7 @@
         	$post_id = $this->factory->post->create(array('post_title' => 'My New Post'));
         	$post = get_post($post_id);
             $this->go_to( site_url( '?p='.$post_id ) );
-        	$this->assertEquals('My New Post', TimberHelper::get_wp_title());
+        	$this->assertEquals('My New Post', Timber\Helper::get_wp_title());
         }
 
 		function testCloseTags() {
@@ -95,13 +100,13 @@
 
 		function testArrayToObject(){
 			$arr = array('jared' => 'super cool');
-			$obj = TimberHelper::array_to_object($arr);
+			$obj = Timber\Helper::array_to_object($arr);
 			$this->assertEquals('super cool', $obj->jared);
 		}
 
 		function testArrayArrayToObject() {
 			$arr = array('jared' => 'super cool', 'prefs' => array('food' => 'spicy', 'women' => 'spicier'));
-			$obj = TimberHelper::array_to_object($arr);
+			$obj = Timber\Helper::array_to_object($arr);
 			$this->assertEquals('spicy', $obj->prefs->food);
 		}
 
@@ -113,9 +118,9 @@
 			$obj2->name = 'austin';
 			$obj2->skill = 'cooking';
 			$arr = array($obj1, $obj2);
-			$index = TimberHelper::get_object_index_by_property($arr, 'skill', 'cooking');
+			$index = Timber\Helper::get_object_index_by_property($arr, 'skill', 'cooking');
 			$this->assertEquals(1, $index);
-			$obj = TimberHelper::get_object_by_property($arr, 'skill', 'cooking');
+			$obj = Timber\Helper::get_object_by_property($arr, 'skill', 'cooking');
 			$this->assertEquals('austin', $obj->name);
 		}
 
@@ -124,7 +129,7 @@
 			$obj1->name = 'mark';
 			$obj1->skill = 'acro yoga';
 			$arr = array($obj1);
-			$result = TimberHelper::get_object_by_property($arr, 'skill', 'cooking');
+			$result = Timber\Helper::get_object_by_property($arr, 'skill', 'cooking');
 			$this->assertFalse($result);
 		}
 
@@ -148,13 +153,13 @@
 			$obj1 = new stdClass();
 			$obj1->name = 'mark';
 			$obj1->skill = 'acro yoga';
-			$obj = TimberHelper::get_object_by_property($obj1, 'skill', 'cooking');
+			$obj = Timber\Helper::get_object_by_property($obj1, 'skill', 'cooking');
 		}
 
 		function testTimers() {
-			$start = TimberHelper::start_timer();
+			$start = Timber\Helper::start_timer();
 			sleep(1);
-			$end = TimberHelper::stop_timer($start);
+			$end = Timber\Helper::stop_timer($start);
 			$this->assertContains(' seconds.', $end);
 			$time = str_replace(' seconds.', '', $end);
 			$this->assertGreaterThan(1, $time);
@@ -162,35 +167,35 @@
 
 		function testArrayTruncate() {
 			$arr = array('Buster', 'GOB', 'Michael', 'Lindsay');
-			$arr = TimberHelper::array_truncate($arr, 2);
+			$arr = Timber\Helper::array_truncate($arr, 2);
 			$this->assertContains('Buster', $arr);
 			$this->assertEquals(2, count($arr));
 			$this->assertFalse(in_array('Lindsay', $arr));
 		}
 
 		function testIsTrue() {
-			$true = TimberHelper::is_true('true');
+			$true = Timber\Helper::is_true('true');
 			$this->assertTrue($true);
-			$false = TimberHelper::is_true('false');
+			$false = Timber\Helper::is_true('false');
 			$this->assertFalse($false);
-			$estelleGetty = TimberHelper::is_true('Estelle Getty');
+			$estelleGetty = Timber\Helper::is_true('Estelle Getty');
 			$this->assertTrue($estelleGetty);
 		}
 
 		function testIsEven() {
-			$this->assertTrue(TimberHelper::iseven(2));
-			$this->assertFalse(TimberHelper::iseven(7));
+			$this->assertTrue(Timber\Helper::iseven(2));
+			$this->assertFalse(Timber\Helper::iseven(7));
 		}
 
 		function testIsOdd() {
-			$this->assertFalse(TimberHelper::isodd(2));
-			$this->assertTrue(TimberHelper::isodd(7));
+			$this->assertFalse(Timber\Helper::isodd(2));
+			$this->assertTrue(Timber\Helper::isodd(7));
 		}
 
 		function testErrorLog() {
 			ob_start();
-			$this->assertTrue(TimberHelper::error_log('foo'));
-			$this->assertTrue(TimberHelper::error_log(array('Dark Helmet', 'Barf')));
+			$this->assertTrue(Timber\Helper::error_log('foo'));
+			$this->assertTrue(Timber\Helper::error_log(array('Dark Helmet', 'Barf')));
 			$data = ob_get_flush();
 		}
 
@@ -205,7 +210,7 @@
 			$boo->name = 'Robbie';
 			$boo->year = 1989;
 			$people = array($lauren, $michael, $boo);
-			TimberHelper::osort($people, 'year');
+			Timber\Helper::osort($people, 'year');
 			$this->assertEquals('Michael', $people[0]->name);
 			$this->assertEquals('Lauren', $people[1]->name);
 			$this->assertEquals('Robbie', $people[2]->name);
@@ -231,35 +236,6 @@
 			$template = "{% set sizes = [34, 36, 38, 40, 42] %}{{ sizes|filter(v => v > 38)|join(', ') }}";
 			$str = Timber::compile_string($template);
 			$this->assertEquals("40, 42", $str);
-		}
-
-		/**
- 		 * @expectedException Twig\Error\RuntimeError
-		 */
-		function testArrayFilterKeyValueUsingPostQuery() {
-			$posts = [];
-			$posts[] = $this->factory->post->create(array('post_title' => 'Stringer Bell', 'post_content' => 'Idris Elba'));
-			$posts[] = $this->factory->post->create(array('post_title' => 'Snoop', 'post_content' => 'Felicia Pearson'));
-			$posts[] = $this->factory->post->create(array('post_title' => 'Cheese', 'post_content' => 'Method Man'));
-			$posts = new Timber\PostQuery($posts);
-			$template = '{% for post in posts | filter({post_content: "Method Man"
-		})%}{{ post.title }}{% endfor %}';
-			$str = Timber::compile_string($template, array('posts' => $posts));
-			$this->assertEquals('Cheese', trim($str));
-		}
-
-		/**
- 		 * @expectedException Twig\Error\RuntimeError
-		 */
-		function testArrayFilterMulti() {
-			$posts = [];
-			$posts[] = $this->factory->post->create(array('post_title' => 'Stringer Bell', 'post_content' => 'Idris Elba'));
-			$posts[] = $this->factory->post->create(array('post_title' => 'Snoop', 'post_content' => 'Felicia Pearson'));
-			$posts[] = $this->factory->post->create(array('post_title' => 'Cheese', 'post_content' => 'Method Man'));
-			$posts = Timber::get_posts($posts);
-			$template = '{% for post in posts | filter({slug:"snoop", post_content:"Idris Elba"}, "OR")%}{{ post.title }} {% endfor %}';
-			$str = Timber::compile_string($template, array('posts' => $posts));
-			$this->assertEquals('Stringer Bell Snoop', trim($str));
 		}
 
 		/**
@@ -301,19 +277,30 @@
 			$this->assertTrue(is_array($convert_array));
 		}
 
- 		function testCovertPostWithClassMap() {
-			register_post_type('book');
+ 		function testConvertPostWithClassMap() {
+			register_post_type('sport');
 			require_once('assets/Sport.php');
-			add_filter('Timber\PostClassMap', function( $post_classes ) {
-				$post_classes = array('sport' => 'Sport', 'post' => 'Timber');
-				$post_classes['sport'] = 'Sport';
-				return $post_classes;
-			});
+
+			$this->register_post_classmap_temporarily([
+				'sport' => Sport::class,
+			]);
+
  			$sport_id = $this->factory->post->create(array('post_type' => 'sport', 'post_title' => 'Basketball Player'));
 			$wp_post = get_post($sport_id);
 			$sport_post = \Timber\Helper::convert_wp_object($wp_post);
-			$this->assertEquals('Sport', get_class($sport_post));
+			$this->assertInstanceOf(Sport::class, $sport_post);
 			$this->assertEquals('ESPN', $sport_post->channel());
  		}
+
+ 		/**
+ 		 * @expectedIncorrectUsage Accessing the thumbnail ID through {{ post._thumbnail_id }}
+ 		 */
+ 		function testDoingItWrong() {
+ 			$post_id = $this->factory->post->create();
+ 			$posts = Timber::get_posts();
+ 			update_post_meta($post_id, '_thumbnail_id', '707');
+ 			$post = Timber::get_post($post_id);
+ 			$thumbnail_id = $post->_thumbnail_id;
+ 		}  
 
 	}

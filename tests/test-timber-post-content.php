@@ -1,16 +1,18 @@
 <?php
 
+	/**
+	 * @group posts-api
+	 */
 	class TestTimberPostContent extends Timber_UnitTestCase {
 
 
 	function testContent(){
 		$quote = 'The way to do well is to do well.';
 		$post_id = $this->factory->post->create();
-		$post = new TimberPost($post_id);
+		$post = Timber::get_post( $post_id );
 		$post->post_content = $quote;
 		wp_update_post($post);
 		$this->assertEquals($quote, trim(strip_tags($post->content())));
-		$this->assertEquals($quote, trim(strip_tags($post->get_content())));
 	}
 
 	function testContentPaged(){
@@ -19,14 +21,12 @@
 		$quote .= $page2 = "And do not let your tongue get ahead of your mind.";
 
 		$post_id = $this->factory->post->create();
-		$post = new TimberPost($post_id);
+		$post = Timber::get_post( $post_id );
 		$post->post_content = $quote;
 		wp_update_post($post);
 
 		$this->assertEquals($page1, trim(strip_tags($post->content(1))));
 		$this->assertEquals($page2, trim(strip_tags($post->content(2))));
-		$this->assertEquals($page1, trim(strip_tags($post->get_content(0,1))));
-		$this->assertEquals($page2, trim(strip_tags($post->get_content(0,2))));
 	}
 
 	function testPagedContent(){
@@ -38,11 +38,10 @@
 
 		$this->go_to( get_permalink( $post_id ) );
 
-		// @todo The below should work magically when the iterators are merged
 		setup_postdata( get_post( $post_id ) );
 
 		$post = Timber::get_post();
-			$this->assertEquals($page1, trim(strip_tags( $post->paged_content() )));
+		$this->assertEquals($page1, trim(strip_tags( $post->paged_content() )));
 
 		$pagination = $post->pagination();
 		$this->go_to( $pagination['pages'][1]['link'] );
@@ -50,7 +49,7 @@
 		setup_postdata( get_post( $post_id ) );
 		$post = Timber::get_post();
 
-		$this->assertEquals($page2, trim(strip_tags( $post->get_paged_content() )));
+		$this->assertEquals($page2, trim(strip_tags( $post->paged_content() )));
 	}
 
 	/**
@@ -74,7 +73,7 @@
 <p>Heres the read more stuff that we shant see!</p>
 <!-- /wp:paragraph -->';
 		$post_id = $this->factory->post->create(['post_content' => $content_1 ]);
-		$post = new \Timber\Post($post_id);
+		$post = Timber::get_post($post_id);
 		
 		$this->assertEquals('<p>Heres the read more stuff that we shant see!</p>', trim($post->content()));
 	}

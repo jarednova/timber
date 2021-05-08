@@ -1,6 +1,6 @@
 <?php
 
-class TestTimberImageHelperInternals extends TimberImage_UnitTestCase {
+class TestTimberImageHelperInternals extends TimberAttachment_UnitTestCase {
 
 	function testAnalyzeURLUploads() {
 		$src = 'http://'.$_SERVER['HTTP_HOST'].'/wp-content/uploads/myimage.jpg';

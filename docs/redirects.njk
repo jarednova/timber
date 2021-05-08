@@ -1,0 +1,22 @@
+---
+layout: "redirect.njk"
+pagination:
+  data: redirects
+  size: 1
+  alias: redirect
+permalink: "/{{ redirect.from }}/index.html"
+redirects: [
+  {
+    "from": "/v2/guides/escapers/",
+    "to": "/v2/guides/escaping/"
+  },
+  {
+    "from": "/v2/guides/unit-testing/",
+    "to": "/v2/guides/testing/"
+  },
+  {
+    "from": "/v2/guides/acf-cookbook/",
+    "to": "/v2/integrations/advanced-custom-fields/"
+  }
+]
+---

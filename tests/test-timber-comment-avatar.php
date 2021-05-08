@@ -1,5 +1,8 @@
 <?php
 
+	/**
+	 * @group comments-api
+	 */
 	class TestTimberCommentAvatar extends Timber_UnitTestCase {
 
 		function testAvatarSize() {
@@ -8,7 +11,7 @@
 			}
 			$post_id = $this->factory->post->create();
 			$comment_id = $this->factory->comment->create(array('comment_post_ID' => $post_id));
-			$comment = new TimberComment($comment_id);
+			$comment = Timber\Timber::get_comment($comment_id);
 
 			# test default gravatr holding image
 			$avatar = $comment->avatar("mystery");
@@ -20,7 +23,7 @@
 			update_option('show_avatars', false);
 			$post_id = $this->factory->post->create();
 			$comment_id = $this->factory->comment->create(array('comment_post_ID' => $post_id));
-			$comment = new TimberComment($comment_id);
+			$comment = Timber\Timber::get_comment($comment_id);
 
 			# test default gravatr holding image
 			$avatar = $comment->avatar();
@@ -34,7 +37,7 @@
 			}
 			$post_id = $this->factory->post->create();
 			$comment_id = $this->factory->comment->create(array('comment_post_ID' => $post_id));
-			$comment = new TimberComment($comment_id);
+			$comment = Timber\Timber::get_comment($comment_id);
 
 			# test default gravatr holding image
 			$avatar = $comment->avatar(92, "blank");
@@ -48,7 +51,7 @@
 			}
 			$post_id = $this->factory->post->create();
 			$comment_id = $this->factory->comment->create(array('comment_post_ID' => $post_id));
-			$comment = new TimberComment($comment_id);
+			$comment = Timber\Timber::get_comment($comment_id);
 
 			# test default gravatr holding image
 			$avatar = $comment->avatar(92, "gravatar_default");
@@ -62,13 +65,13 @@
 			}
 			$post_id = $this->factory->post->create();
 			$comment_id = $this->factory->comment->create(array('comment_post_ID' => $post_id, 'comment_author' => 'jarednova', 'comment_author_email' => 'jarednova@upstatement.com'));
-			$comment = new TimberComment($comment_id);
+			$comment = Timber\Timber::get_comment($comment_id);
 			$gravatar = md5(file_get_contents($comment->avatar()));
 			/* this keeps changing b/c of compression tweaks on WP.org, disabling the test */
 			//$this->assertEquals($gravatar, md5(file_get_contents(dirname(__FILE__).'/assets/jarednova.jpeg')));
 
 			$comment_id = $this->factory->comment->create(array('comment_post_ID' => $post_id, 'comment_author' => 'jarednova', 'comment_author_email' => 'notjared@upstatement.com'));
-			$comment = new TimberComment($comment_id);
+			$comment = Timber\Timber::get_comment($comment_id);
 			$not_gravatar = md5(file_get_contents($comment->avatar()));
 			$this->assertNotEquals($not_gravatar, md5(file_get_contents(dirname(__FILE__).'/assets/jarednova.jpeg')));
 		}
@@ -80,7 +83,7 @@
 			$theme_url = get_theme_root_uri().'/'.get_stylesheet();
 			$post_id = $this->factory->post->create();
 			$comment_id = $this->factory->comment->create(array('comment_post_ID' => $post_id));
-			$comment = new TimberComment($comment_id);
+			$comment = Timber\Timber::get_comment($comment_id);
 
 			# test default gravatr holding image
 			$avatar = $comment->avatar(32, "mystery");

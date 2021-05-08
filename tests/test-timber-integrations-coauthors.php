@@ -1,5 +1,8 @@
 <?php
 
+	/**
+	 * @group posts-api
+	 */
 	class TestTimberIntegrationsCoAuthors extends Timber_UnitTestCase {
 
 		/**
@@ -11,6 +14,13 @@
 				unset( $this->caught_deprecated[ $key ] );
 			}
 			parent::expectedDeprecated();
+		}
+
+		function setUp() {
+			if ( !class_exists('CoAuthors_Plus') ) {
+				return $this->markTestSkipped('CoAuthors_Plus plugin not loaded');
+			}
+			parent::setUp();
 		}
 
 		/* ----------------
@@ -59,7 +69,7 @@
 			$uids[] = $this->factory->user->create(array('display_name' => 'Mike Swartz', 'user_login' => 'm_swartz'));
 			$uids[] = $this->factory->user->create(array('display_name' => 'JP Boneyard', 'user_login' => 'jpb'));
 			$pid = $this->factory->post->create(array('post_author' => $uids[0]));
-			$post = new TimberPost($pid);
+			$post = Timber::get_post($pid);
 			$cap = new CoAuthors_Plus();
 			$added = $cap->add_coauthors($pid, array('mbottitta', 'm_swartz', 'jpb'));
 			$this->assertTrue($added);
@@ -77,7 +87,7 @@
 		function testAuthors() {
 			$uid = $this->factory->user->create(array('display_name' => 'Jen Weinman', 'user_login' => 'aquajenus'));
 			$pid = $this->factory->post->create(array('post_author' => $uid));
-			$post = new TimberPost($pid);
+			$post = Timber::get_post($pid);
 			$template_string = '{% for author in post.authors %}{{author.name}}{% endfor %}';
 			$str = Timber::compile_string($template_string, array('post' => $post));
 			$this->assertEquals('Jen Weinman', $str);
@@ -85,7 +95,7 @@
 
 		function testGuestAuthor(){
 			$pid = $this->factory->post->create();
-			$post = new TimberPost($pid);
+			$post = Timber::get_post($pid);
 
 			$user_login = 'bmotia';
 			$display_name = 'Motia';
@@ -105,7 +115,7 @@
 		function testGuestAuthorWithRegularAuthor(){
 			$uid = $this->factory->user->create(array('display_name' => 'Alexander Hamilton', 'user_login' => 'ahamilton'));
 			$pid = $this->factory->post->create(array('post_author' => $uid));
-			$post = new TimberPost($pid);
+			$post = Timber::get_post($pid);
 
 			$user_login = 'bmotia';
 			$display_name = 'Motia';
@@ -125,17 +135,20 @@
 			$this->assertEquals('Alexander Hamilton, Motia,', trim($str));
 		}
 
+		/**
+		 * Co-Authors originally created as guests can be linked to a real WordPress user account. In these instances, we want to use the linked account's information
+		 */
 		function testLinkedGuestAuthor(){
 			global $coauthors_plus;
 
 			$pid = $this->factory->post->create();
-			$post = new TimberPost($pid);
+			$post = Timber::get_post($pid);
 
 			$user_login = 'truelogin';
 			$display_name = 'True Name';
 
 			$uid = $this->factory->user->create(array('display_name' => $display_name, 'user_login' => $user_login));
-			$user = new Timber\User($uid);
+			$user = Timber::get_user($uid);
 
 			$guest_login = 'linkguestlogin';
 			$guest_display_name = 'LGuest D Name';
@@ -148,21 +161,34 @@
 
 			$coauthors_plus->force_guest_authors = false;
 			$authors = $post->authors();
+			
+			/**
+			 * Here we're testing to see if we get the LINKED guest author account ("Mr. True Name") 
+			 * instead of the temporary guest name ("LGuest D Name") that was created.
+			 */
 			$author = $authors[0];
-			$this->assertEquals($author->display_name, $user->name);
+			$this->assertEquals("True Name", $author->name());
 			$this->assertInstanceOf('Timber\User', $author);
-			$this->assertNotInstanceOf('Timber\Integrations\CoAuthorsPlusUser', $author);
+			$this->assertInstanceOf('Timber\Integrations\CoAuthorsPlusUser', $author);
 
+			/**
+			 * Here we're testing that when we FORCE guest authors, it uses the original guest author
+			 * account ("LGuest D Name") when reporting the user's name. 
+			 */
 			$coauthors_plus->force_guest_authors = true;
 			$authors = $post->authors();
 			$author = $authors[0];
-			$this->assertEquals($author->display_name, $guest_display_name);
+			$this->assertEquals($guest_display_name, $author->name());
+			$this->assertInstanceOf('Timber\User', $author);
 			$this->assertInstanceOf('Timber\Integrations\CoAuthorsPlusUser', $author);
 		}
 
+		/**
+		 * @group attachments
+		 */
 		function testGuestAuthorAvatar(){
 			$pid = $this->factory->post->create();
-			$post = new TimberPost($pid);
+			$post = Timber::get_post($pid);
 			$user_login = 'withfeaturedimage';
 			$display_name = 'Have Featured';
 			$email = 'admin@admin.com';
@@ -174,12 +200,13 @@
 				)
 			);
 			$attach_id = self::attach_featured_image($guest_id, 'avt-1.jpg');
-			$image = new Timber\Image(array('ID' => $attach_id));
+			$image = Timber::get_post($attach_id);
 
 			global $coauthors_plus;
 			$coauthors_plus->add_coauthors($pid, array($user_login));
 
-			$template_string = '{% for author in post.authors %}{{author.avatar.src}}{% endfor %}';
+			// NOTE: this used to be `{{author.avatar.src}}` but now avatar() just returns a string
+			$template_string = '{% for author in post.authors %}{{author.avatar}}{% endfor %}';
 			Timber\Integrations\CoAuthorsPlus::$prefer_gravatar = false;
 			$str1 = Timber::compile_string($template_string, array('post' => $post));
 			$this->assertEquals($image->src(), $str1);

@@ -2,10 +2,10 @@
 <a href="https://upstatement.com/timber/"><img src="http://i.imgur.com/PbEwvZ9.png" style="display:block; margin:auto; width:100%; max-width:100%"/></a>
 </div>
 
-By 
-[Jared Novack](https://github.com/jarednova) ([@jarednova](https://twitter.com/jarednova)), 
-[Lukas Gächter](https://github.com/gchtr) ([@lgaechter](https://twitter.com/lgaechter)), 
-[Pascal Knecht](https://github.com/pascalknecht) ([@pascalknecht](https://twitter.com/revenwo)), 
+By
+[Jared Novack](https://github.com/jarednova) ([@jarednova](https://twitter.com/jarednova)),
+[Lukas Gächter](https://github.com/gchtr) ([@lgaechter](https://twitter.com/lgaechter)),
+[Pascal Knecht](https://github.com/pascalknecht) ([@pascalknecht](https://twitter.com/revenwo)),
 [Maciej Palmowski](https://github.com/palmiak) ([@palmiak_fp](https://twitter.com/palmiak_fp)),
 [Coby Tamayo](https://github.com/acobster) ([@cobytamayo](https://keybase.io/acobster)),
 [Upstatement](https://twitter.com/upstatement) and [hundreds of other GitHub contributors](https://github.com/timber/timber/graphs/contributors)
@@ -18,7 +18,8 @@ By
 [![WordPress Rating](https://img.shields.io/wordpress/plugin/r/timber-library.svg?style=flat-square)](https://wordpress.org/support/plugin/timber-library/reviews/)
 
 
-### Because WordPress is awesome, but the_loop isn't
+> Because WordPress is awesome, but the_loop isn’t.
+
 Timber helps you create fully-customized WordPress themes faster with more sustainable code. With Timber, you write your HTML using the [Twig Template Engine](http://twig.sensiolabs.org/) separate from your PHP files.
 
 This cleans up your theme code so, for example, your PHP file can focus on being the data/logic, while your Twig file can focus 100% on the HTML and display.
@@ -30,13 +31,16 @@ This is what Timber's `.twig` files look like (from this [Hello World example](h
 {% block content %}
   <h1 class="big-title">{{ foo }}</h1>
   <h2 class="post-title">{{ post.title }}</h2>
+
   <img src="{{ post.thumbnail.src }}" />
+
   <div class="body">
 	{{ post.content }}
   </div>
 {% endblock %}
 ```
-Once Timber is installed and activated in your `plugins` directory, it gives any WordPress theme the ability to take advantage of the power of Twig and other Timber features.
+
+Once Timber is installed, it gives any WordPress theme the ability to take advantage of the power of Twig and other Timber features.
 
 ### Looking for docs?
 * [Timber Documentation](https://timber.github.io/docs/)
@@ -81,7 +85,7 @@ Timber is a tool for developers who want to translate their HTML into high-quali
 * **Accessible**: No black boxes. Every effort is made so the developer has access to 100% of their HTML.
 
 #### What does it look like?
-Nothing. Timber is meant for you to build a theme on. Like [_s](https://github.com/Automattic/_s) it comes style-free, because you're the style expert. Instead, Timber handles the logic you need to make a kick-ass looking site.
+Nothing. Timber is meant for you to build a theme on. Like [underscores](https://github.com/Automattic/_s) it comes style-free, because you're the style expert. Instead, Timber handles the logic you need to make a kick-ass looking site.
 
 #### Who is it good for?
 Timber is great for any WordPress developer who cares about writing good, maintainable code. It helps teams of designers and developers working together. At [Upstatement](http://upstatement.com) we made Timber because while our entire team needs to participate in building WordPress sites, not everyone knows the ins-and-outs of the_loop(),  codex and PHP (nor should they). With Timber your best WordPress engineer can focus on building the `.php` files with requests from WordPress and pass the data into `.twig` files. Once there, designers can easily mark-up data and build out a site's look-and-feel.
@@ -114,7 +118,6 @@ Timber is great for any WordPress developer who cares about writing good, mainta
 * [**Gantry5**](https://wordpress.org/plugins/gantry5/) a framework for theme development
 * [**Hozokit**](https://github.com/csalmeida/hozokit) a component based starter theme
 * [**Seedling**](https://github.com/maxdmyers/seedling) a starter theme using Bootstrap 4
-
 
 #### Helpful Links
 * [**CSS Tricks**](https://css-tricks.com/timber-and-twig-reignited-my-love-for-wordpress/) introduction to Timber by [@tjFogarty](https://github.com/tjFogarty)

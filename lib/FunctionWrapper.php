@@ -2,14 +2,13 @@
 
 namespace Timber;
 
-use Timber\Helper;
-
 /**
- * FunctionWrapper Class.
+ * Class FunctionWrapper
  *
- * With Timber, we want to prepare all the data before we echo content through a render function. Some functionality in WordPress directly echoes output instead of returning it. This class makes it easier to store the results of an echoing function by using ob_start() and ob_end_clean() behind the scenes.
- *
- * @package Timber
+ * With Timber, we want to prepare all the data before we echo content through a render function.
+ * Some functionality in WordPress directly echoes output instead of returning it. This class makes
+ * it easier to store the results of an echoing function by using ob_start() and ob_end_clean()
+ * behind the scenes.
  */
 class FunctionWrapper {
 
@@ -48,38 +47,6 @@ class FunctionWrapper {
 
 		$this->_args = $args;
 		$this->_use_ob = $return_output_buffer;
-
-		/**
-		 * @deprecated since 1.3.0
-		 * @todo remove in 1.4.0
-		 */
-		add_filter('timber/twig', array(&$this, 'add_to_twig'));
-	}
-
-	/**
-	 * Make function available in Twig.
-	 *
-	 * When a function is added more than once, addFunction() will throw a LogicException that states that the function
-	 * is already registered. By catching this exception, we can prevent a fatal error.
-	 * @see \Twig\Extension\StagingExtension::addFunction()
-	 *
-	 * @deprecated since 1.3.0
-	 * @todo remove in 1.4.0
-	 * @param \Twig\Environment $twig
-	 * @return \Twig\Environment
-	 */
-	public function add_to_twig( $twig ) {
-		$wrapper = $this;
-
-		try {
-			$twig->addFunction( new Twig_Function( $this->_function, function() use ( $wrapper ) {
-				return call_user_func_array( array( $wrapper, 'call' ), func_get_args() );
-			} ) );
-
-		// Use empty 'catch' block and not 'finally', because finally needs PHP 5.5 to work.
-		} catch ( \Exception $e ) {}
-
-		return $twig;
 	}
 
 	/**

@@ -1,5 +1,5 @@
 <?php
-	class TimberTermSubclass extends TimberTerm {
+	class TimberTermSubclass extends Timber\Term {
 
 		public function foo(){
 			return 'bar';

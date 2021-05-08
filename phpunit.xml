@@ -5,15 +5,16 @@
 	convertErrorsToExceptions="true"
 	convertNoticesToExceptions="true"
 	convertWarningsToExceptions="true"
+	ignoreDeprecatedCodeUnitsFromCodeCoverage="true"
 	>
 	<testsuites>
-		<testsuite>
+		<testsuite name="all">
 			<directory prefix="test-" suffix=".php">./tests/</directory>
 		</testsuite>
 		<!-- The suite below HAS to be last to run,
 		as it includes a test that sets some const and would contaminate
 		the other tests as well. -->
-		<testsuite>
+		<testsuite name="all-but-last">
 			<directory prefix="testX-" suffix=".php">./tests/</directory>
 		</testsuite>
 	</testsuites>
@@ -27,4 +28,5 @@
     		<file>timber.php</file>
   		</whitelist>
 	</filter>
+	
 </phpunit>

@@ -2,6 +2,9 @@
 
 class TestTimberClass extends Timber_UnitTestCase {
 
+	/**
+	 * @doesNotPerformAssertions
+	 */
 	function testConstantsDefining() {
 		$timber = $GLOBALS['timber'];
 		$timber->init_constants();

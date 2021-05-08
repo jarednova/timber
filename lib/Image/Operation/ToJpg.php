@@ -2,7 +2,6 @@
 
 namespace Timber\Image\Operation;
 
-use Timber\Helper;
 use Timber\ImageHelper;
 use Timber\Image\Operation as ImageOperation;
 
@@ -46,7 +45,7 @@ class ToJpg extends ImageOperation {
 		if ( !file_exists($load_filename) ) {
 			return false;
 		}
-		
+
 		// Attempt to check if SVG.
 		if ( ImageHelper::is_svg($load_filename) ) {
 			return false;

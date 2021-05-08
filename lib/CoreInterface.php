@@ -2,6 +2,9 @@
 
 namespace Timber;
 
+/**
+ * Interface CoreInterface
+ */
 interface CoreInterface {
 
 	public function __call( $field, $args );
@@ -12,7 +15,4 @@ interface CoreInterface {
 	 * @return boolean
 	 */
 	public function __isset( $field );
-
-	public function meta( $key );
-
 }
