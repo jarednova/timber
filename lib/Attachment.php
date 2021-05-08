@@ -24,13 +24,6 @@ class Attachment extends Post implements CoreInterface {
 	public static $representation = 'attachment';
 
 	/**
-	 * Object type.
-	 *
-	 * @var string What the object represents in WordPress terms.
-	 */
-	public $object_type = 'attachment';
-
-	/**
 	 * File.
 	 *
 	 * @api

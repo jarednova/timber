@@ -49,13 +49,6 @@ namespace Timber;
  * ```
  */
 class Image extends Attachment {
-	/**
-	 * Object type.
-	 *
-	 * @api
-	 * @var string What the object represents in WordPress terms.
-	 */
-	public $object_type = 'image';
 
 	/**
 	 * Representation.
