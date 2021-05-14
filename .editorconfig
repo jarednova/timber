@@ -23,5 +23,8 @@ indent_style = space
 [*.txt]
 end_of_line = crlf
 
+[*.yml]
+indent_style = space
+
 [wp-config-sample.php]
 end_of_line = crlf

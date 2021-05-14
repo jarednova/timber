@@ -1,0 +1,132 @@
+name: Timber Tests
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mariadb:latest
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: true
+          MYSQL_ROOT_PASSWORD:
+          MYSQL_DATABASE: wordpress_test
+        ports:
+          - 3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    continue-on-error: ${{ matrix.experimental == true }}
+    strategy:
+
+      fail-fast: false
+      matrix:
+        php: ['7.4']
+        wp: ['5.3.6', 'latest']
+        multisite: ['0', '1']
+        dependency-version: [prefer-stable] # prefer-lowest
+        webp: [false]
+        coverage: [false]
+        extensions: ['gd']
+        include:
+          # WP Trunk
+          - php: '7.4'
+            wp: 'trunk'
+            dependency-version: 'prefer-stable'
+            multisite: '0'
+            experimental: true
+          # PHP with Imagick
+          - php: '7.4'
+            wp: 'latest'
+            dependency-version: 'prefer-stable'
+            multisite: '0'
+            extensions: 'imagick'
+          # Coverage
+          - php: '7.4'
+            wp: 'latest'
+            dependency-version: 'prefer-stable'
+            multisite: '0'
+            coverage: true
+
+    name: PHP ${{ matrix.php }} ${{ matrix.extensions == 'imagick' && ' (Imagick)' || '' }}${{ matrix.coverage && ' (with coverage)' || '' }} ${{ matrix.webp && ' (webp)' || '' }} | WP ${{ matrix.wp }}${{ matrix.multisite == 1 && ' (MS)' || '' }} | ${{ matrix.dependency-version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: ${{ matrix.coverage && 'pcov' || 'none' }}
+          tools: composer:v2
+          extensions: curl, date, dom, iconv, json, libxml, mysql, ${{ matrix.extensions }}
+          ini-values: pcov.directory=lib
+
+      - name: Shutdown default MySQL service
+        run: sudo service mysql stop
+
+      - name: Verify MariaDB connection
+        run: |
+          while ! mysqladmin ping -h"127.0.0.1" -P"${{ job.services.mysql.ports[3306] }}" --silent; do
+            sleep 1
+          done
+
+      - name: Setup problem matchers for PHP
+        run: echo "::add-matcher::${{ runner.tool_cache }}/php.json"
+
+      - name: Setup problem matchers for PHPUnit
+        run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-${{ matrix.dependency-version }}-${{ matrix.php }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.dependency-version }}-${{ matrix.php }}-composer-
+
+      - name: Install composer dependencies
+        run: composer update --${{ matrix.dependency-version }} --prefer-dist --no-progress --no-interaction
+
+      - name: Install tests
+        run: bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1:${{ job.services.mysql.ports['3306'] }} ${{ matrix.wp }} true
+
+      - name: Setup PCOV
+        if: ${{ matrix.coverage == true }}
+        run: |
+          composer require --dev --ignore-platform-reqs pcov/clobber
+          vendor/bin/pcov clobber
+
+      - name: Run tests
+        if: ${{ !matrix.webp }}
+        run: vendor/bin/phpunit -c phpunit-nocover.xml --verbose --colors=always
+        env:
+          WP_MULTISITE: ${{ matrix.multisite }}
+
+      - name: Run tests with coverage
+        if: ${{ matrix.coverage == true }}
+        run: |
+          vendor/bin/phpunit -c phpunit.xml --verbose --colors=always
+
+      - name: Upload coverage results to Coveralls
+        if: ${{ matrix.coverage == true }}
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          composer global require php-coveralls/php-coveralls
+          php-coveralls --coverage_clover=build/logs/clover.xml -v
+
+      - name: Run webp tests
+        if: ${{ matrix.webp }}
+        run: vendor/phpunit/phpunit/phpunit -c phpunit.xml --verbose ./tests/test-timber-image-towebp.php
