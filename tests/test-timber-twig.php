@@ -6,7 +6,7 @@
 	class TestTimberTwig extends Timber_UnitTestCase {
 
 		function tearDown() {
-			$lang_dir = get_stylesheet_directory().'/languages';
+			$lang_dir = Timber\ThemeHelper::get_stylesheet_directory().'/languages';
 			if (file_exists($lang_dir.'/en_US.po' )) {
 				unlink($lang_dir.'/en_US.po');
 			}
@@ -25,7 +25,7 @@
 		}
 
 		function _setupTranslationFiles() {
-			$lang_dir = get_stylesheet_directory().'/languages';
+			$lang_dir = Timber\ThemeHelper::get_stylesheet_directory().'/languages';
 
 			if ( !file_exists($lang_dir.'/en_US.po') ) {
 				$this->installTranlsationFiles($lang_dir);

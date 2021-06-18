@@ -80,7 +80,7 @@
 			if (!TestTimberImage::is_connected()){
 				$this->markTestSkipped('Cannot test avatar images when not connected to internet');
 			}
-			$theme_url = get_theme_root_uri().'/'.get_stylesheet();
+			$theme_url = get_theme_root_uri().'/'.Timber\ThemeHelper::get_stylesheet();
 			$post_id = $this->factory->post->create();
 			$comment_id = $this->factory->comment->create(array('comment_post_ID' => $post_id));
 			$comment = Timber\Timber::get_comment($comment_id);

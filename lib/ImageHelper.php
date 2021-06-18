@@ -545,10 +545,10 @@ class ImageHelper {
 	 * @return string Full path to the file in question.
 	 */
 	static function theme_url_to_dir( $src ) {
-		$site_root = trailingslashit(get_theme_root_uri()).get_stylesheet();
+		$site_root = trailingslashit(get_theme_root_uri()).ThemeHelper::get_stylesheet();
 		$tmp = str_replace($site_root, '', $src);
 		//$tmp = trailingslashit(get_theme_root()).get_stylesheet().$tmp;
-		$tmp = get_stylesheet_directory().$tmp;
+		$tmp = ThemeHelper::get_stylesheet_directory().$tmp;
 		if ( realpath($tmp) ) {
 			return realpath($tmp);
 		}
