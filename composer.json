@@ -32,7 +32,7 @@
     "twig/twig": "^1.41|^2.10",
     "upstatement/routes": "0.8",
     "composer/installers": "~1.0",
-    "twig/cache-extension": "^1.5"
+    "twig/cache-extra": "^3"
   },
   "require-dev": {
     "johnpbloch/wordpress": "*",
