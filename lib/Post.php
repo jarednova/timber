@@ -1570,7 +1570,7 @@ class Post extends Core implements CoreInterface {
 	 * ```twig
 	 * <img src="{{ post.thumbnail.src }}" />
 	 * ```
-	 * @return Timber\Image|null of your thumbnail
+	 * @return Image|null of your thumbnail
 	 */
 	public function thumbnail() {
 		$tid = get_post_thumbnail_id($this->ID);
