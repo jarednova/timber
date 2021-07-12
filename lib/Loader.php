@@ -434,39 +434,6 @@ class Loader {
 		 *
 		 * @todo Add summary, description, example
 		 *
-		 * @since 0.21.9
-		 *
-		 * @param \Twig\Environment $twig The Twig environment you can add functionality to.
-		 */
-		$twig = apply_filters('timber/twig/filters', $twig);
-
-		/**
-		 * Filters …
-		 *
-		 * @todo Add summary, description, example
-		 *
-		 * @since 1.3.0-rc2
-		 *
-		 * @param \Twig\Environment $twig The Twig environment you can add functionality to.
-		 */
-		$twig = apply_filters('timber/twig/functions', $twig);
-
-		/**
-		 * Filters …
-		 *
-		 * @todo Add summary, description, example
-		 *
-		 * @since 1.1.1
-		 *
-		 * @param \Twig\Environment $twig The Twig environment you can add functionality to.
-		 */
-		$twig = apply_filters('timber/twig/escapers', $twig);
-
-		/**
-		 * Filters …
-		 *
-		 * @todo Add summary, description, example
-		 *
 		 * @since 0.20.10
 		 *
 		 * @param \Twig\Environment $twig The Twig environment you can add functionality to.
@@ -476,9 +443,9 @@ class Loader {
 		/**
 		 * Filters …
 		 *
-		 * @deprecated 2.0.0, use `timber/twig/filters`
+		 * @deprecated 2.0.0, use `timber/twig`
 		 */
-		$twig = apply_filters_deprecated( 'twig_apply_filters', array( $twig ), '2.0.0', 'timber/twig/filters' );
+		$twig = apply_filters_deprecated( 'twig_apply_filters', [ $twig ], '2.0.0', 'timber/twig' );
 
 		/**
 		 * Filters the Twig environment used in the global context.

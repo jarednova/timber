@@ -63,7 +63,7 @@ class TestTimberFunctionWrapper extends Timber_UnitTestCase {
 	}
 
 	function testNakedSoloFunction() {
-		add_filter('timber/twig/functions', function( $twig ) {
+		add_filter('timber/twig', function( $twig ) {
 			$twig->addFunction(new \Twig\TwigFunction('your_boo', array($this, 'your_boo')) );
 			return $twig;
 		});

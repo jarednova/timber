@@ -537,47 +537,4 @@ In Twig:
 
 ## Extending Twig
 
-You can also extend Twig by adding custom functionality like functions or filters.
-
-```php
-<?php
-
-add_filter( 'timber/twig', 'add_to_twig' );
-
-/**
- * Adds functionality to Twig.
- *
- * @param \Twig\Environment $twig The Twig environment.
- * @return \Twig\Environment
- */
-function add_to_twig( $twig ) {
-    // Adding a function.
-    $twig->addFunction( new \Twig\TwigFunction( 'edit_post_link', 'edit_post_link' ) );
-
-    // Adding functions as filters.
-    $twig->addFilter( new \Twig\TwigFilter( 'whateverify', 'whateverify' ) );
-    $twig->addFilter( new \Twig\TwigFilter( 'slugify', function( $title ) {
-        return sanitize_title( $title );
-    } ) );
-
-    return $twig;
-}
-
-function whateverify( $text ) {
-    $text .= ' or whatever';
-
-    return $text;
-}
-```
-
-This can now be called in your twig files with:
-
-```twig
-<h2 id="{{ post.title|slugify }}">{{ post.title|whateverify }}</h2>
-```
-
-Which will output:
-
-```twig
-<h2 id="hello-world">Hello World! or whatever</h2>
-```
+If you want to extend Twig with your own functionality, check out the [Extending Twig Guide](https://timber.github.io/docs/v2/guides/extending-twig/).

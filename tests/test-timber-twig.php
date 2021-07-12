@@ -338,7 +338,7 @@
 		 * @expectedException \Twig\Error\SyntaxError
 		 */
 		function testRemoveADefaultFunction() {
-			add_filter('timber/twig/default_functions', function($functions) {
+			add_filter('timber/twig/functions', function($functions) {
 				unset($functions['shortcode']);
 				return $functions;
 			});
@@ -349,7 +349,7 @@
 		 * @expectedException \Twig\Error\SyntaxError
 		 */
 		function testRemoveADefaultFilter() {
-			add_filter('timber/twig/default_filters', function($filters) {
+			add_filter('timber/twig/filters', function($filters) {
 				unset($filters['wpautop']);
 				return $filters;
 			});

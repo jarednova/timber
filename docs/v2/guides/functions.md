@@ -52,45 +52,9 @@ Nice! Any gotchas? Unfortunately yes. While the above example will totally work 
 
 ## Make functions available in Twig
 
-If you have functions that you use a lot and want to improve readability of your code, you can make a function available in Twig by using `Twig\TwigFunction` inside the `timber/twig` hook.
+Check out the [Extending Twig Guide](https://timber.github.io/docs/v2/guides/extending-twig/) to learn how to make your own functions available in Twig.
 
-```php
-add_filter( 'timber/twig', 'add_to_twig' );
-
-/**
- * My custom Twig functionality.
- *
- * @param \Twig\Environment $twig
- * @return \Twig\Environment
- */
- function add_to_twig( $twig ) {
-    $twig->addFunction( new Twig\TwigFunction( 'edit_post_link', 'edit_post_link' ) );
-
-    return $twig;
-} );
-```
-
-Now you can use it like a "normal" function:
-
-```twig
-{# single.twig #}
-<div class="admin-tools">
-    {{ edit_post_link() }}
-</div>
-{# Calls edit_post_link using default arguments #}
-
-{# single-my-post-type.twig #}
-<div class="admin-tools">
-    {{ edit_post_link(null, '<span class="edit-my-post-type-link">') }}
-</div>
-{# Calls edit_post_link with all defaults, except for second argument #}
-```
-
-### function_wrapper
-
-In Timber versions lower than 1.3, you could use `function_wrapper` to make functions available in Twig. This method is now deprecated. Instead, use one of the methods above.
-
-### Functions that echo output
+## Functions that echo output
 
 The concept of Timber (and templating engines like Twig in general) is to prepare all the data before you pass it to a template. Some functions in WordPress echo their output directly. We don’t want this, because the output of this function would be echoed before we call `Timber:render()` and appear before every else on your website. There are two ways to work around this:
 
