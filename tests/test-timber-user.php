@@ -1,9 +1,20 @@
 <?php
 
+use Timber\User;
+
 	/**
+	 * @group integrations
 	 * @group users-api
 	 */
 	class TestTimberUser extends Timber_UnitTestCase {
+		function setUp() {
+			parent::setUp();
+
+			// Restore integration-free Class Map for users.
+			$this->add_filter_temporarily('timber/user/classmap', function() {
+				return User::class;
+			});
+		}
 
 		function testIDDataType() {
 			$uid = $this->factory->user->create(array('display_name' => 'James Marshall'));
@@ -88,6 +99,12 @@
 		}
 
 		function testAvatar() {
+			// Restore integration-free Class Map for users.
+			// CoAuthorsPlus overrides avatar behavior, so we disable it explicitly.
+			$this->add_filter_temporarily('timber/user/classmap', function() {
+				return User::class;
+			});
+
 			$uid = $this->factory->user->create(array('display_name' => 'Maciej Palmowski', 'user_login' => 'palmiak', 'user_email' => 'm.palmowski@spiders.agency'));
 			$user = Timber::get_user($uid);
 			$this->assertEquals('http://2.gravatar.com/avatar/b2965625410b81a2b25ef02b54493ce0?s=96&d=mm&r=g', $user->avatar());

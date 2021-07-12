@@ -1,7 +1,11 @@
 <?php
 
+use Timber\Integration\CoAuthorsPlus\CoAuthorsPlusUser;
+use Timber\Integration\CoAuthorsPlusIntegration;
+
 	/**
 	 * @group posts-api
+	 * @group integrations
 	 */
 	class TestTimberIntegrationsCoAuthors extends Timber_UnitTestCase {
 
@@ -62,28 +66,6 @@
 		 * Tests
 		 ---------------- */
 
-		function testCoAuthors() {
-			$uids = array();
-			$uids[] = $this->factory->user->create(array('display_name' => 'Jared Novack', 'user_login' => 'jarednova'));
-			$uids[] = $this->factory->user->create(array('display_name' => 'Tito Bottitta', 'user_login' => 'mbottitta'));
-			$uids[] = $this->factory->user->create(array('display_name' => 'Mike Swartz', 'user_login' => 'm_swartz'));
-			$uids[] = $this->factory->user->create(array('display_name' => 'JP Boneyard', 'user_login' => 'jpb'));
-			$pid = $this->factory->post->create(array('post_author' => $uids[0]));
-			$post = Timber::get_post($pid);
-			$cap = new CoAuthors_Plus();
-			$added = $cap->add_coauthors($pid, array('mbottitta', 'm_swartz', 'jpb'));
-			$this->assertTrue($added);
-			$cai = new CoAuthorsIterator($pid);
-			$authors = $post->authors();
-			$str = Timber::compile_string('{{post.authors|pluck("name")|list(",", "and")}}', array('post' => $post));
-			global $wp_version;
-			if ( $wp_version >= 4.7 ) {
-				$this->markTestSkipped('Ordering in Co-Authors Plus is broken in WordPress 4.7');
-			} else {
-				$this->assertEquals('Tito Bottitta, Mike Swartz and JP Boneyard', $str);
-			}
-		}
-
 		function testAuthors() {
 			$uid = $this->factory->user->create(array('display_name' => 'Jen Weinman', 'user_login' => 'aquajenus'));
 			$pid = $this->factory->post->create(array('post_author' => $uid));
@@ -109,7 +91,7 @@
 			$authors = $post->authors();
 			$author = $authors[0];
 			$this->assertEquals($display_name, $author->display_name);
-			$this->assertInstanceOf('Timber\Integrations\CoAuthorsPlusUser', $author);
+			$this->assertInstanceOf(CoAuthorsPlusUser::class, $author);
 		}
 
 		function testGuestAuthorWithRegularAuthor(){
@@ -129,7 +111,7 @@
 			$authors = $post->authors();
 			$author = $authors[1];
 			$this->assertEquals($display_name, $author->display_name);
-			$this->assertInstanceOf('Timber\Integrations\CoAuthorsPlusUser', $author);
+			$this->assertInstanceOf(CoAuthorsPlusUser::class, $author);
 			$template_string = '{% for author in post.authors %}{{author.name}}, {% endfor %}';
 			$str = Timber::compile_string($template_string, array('post' => $post));
 			$this->assertEquals('Alexander Hamilton, Motia,', trim($str));
@@ -161,26 +143,26 @@
 
 			$coauthors_plus->force_guest_authors = false;
 			$authors = $post->authors();
-			
+
 			/**
-			 * Here we're testing to see if we get the LINKED guest author account ("Mr. True Name") 
+			 * Here we're testing to see if we get the LINKED guest author account ("Mr. True Name")
 			 * instead of the temporary guest name ("LGuest D Name") that was created.
 			 */
 			$author = $authors[0];
 			$this->assertEquals("True Name", $author->name());
 			$this->assertInstanceOf('Timber\User', $author);
-			$this->assertInstanceOf('Timber\Integrations\CoAuthorsPlusUser', $author);
+			$this->assertInstanceOf(CoAuthorsPlusUser::class, $author);
 
 			/**
 			 * Here we're testing that when we FORCE guest authors, it uses the original guest author
-			 * account ("LGuest D Name") when reporting the user's name. 
+			 * account ("LGuest D Name") when reporting the user's name.
 			 */
 			$coauthors_plus->force_guest_authors = true;
 			$authors = $post->authors();
 			$author = $authors[0];
 			$this->assertEquals($guest_display_name, $author->name());
 			$this->assertInstanceOf('Timber\User', $author);
-			$this->assertInstanceOf('Timber\Integrations\CoAuthorsPlusUser', $author);
+			$this->assertInstanceOf(CoAuthorsPlusUser::class, $author);
 		}
 
 		/**
@@ -207,11 +189,10 @@
 
 			// NOTE: this used to be `{{author.avatar.src}}` but now avatar() just returns a string
 			$template_string = '{% for author in post.authors %}{{author.avatar}}{% endfor %}';
-			Timber\Integrations\CoAuthorsPlus::$prefer_gravatar = false;
 			$str1 = Timber::compile_string($template_string, array('post' => $post));
 			$this->assertEquals($image->src(), $str1);
 
-			Timber\Integrations\CoAuthorsPlus::$prefer_gravatar = true;
+			add_filter('timber/co_authors_plus/prefer_gravatar', '__return_true');
 			$str2 = Timber::compile_string($template_string, array('post' => $post));
 			$this->assertEquals(get_avatar_url($email), $str2);
 		}

@@ -1,18 +1,25 @@
 <?php
 
-namespace Timber\Integrations;
+namespace Timber\Integration;
 
-class CoAuthorsPlus {
+use CoAuthors_Plus;
+use WP_User;
 
-	public static $prefer_gravatar = false;
-	
+use Timber\Integration\CoAuthorsPlus\CoAuthorsPlusUser;
+
+class CoAuthorsPlusIntegration implements IntegrationInterface {
+
+	public function should_init() : bool {
+		return class_exists( CoAuthors_Plus::class );
+	}
+
 	/**
 	 * @codeCoverageIgnore
 	 */
-	public function __construct() {
-		add_filter('timber/post/authors', array($this, 'authors'), 10, 2);
+	public function init() : void {
+		add_filter('timber/post/authors', [$this, 'authors'], 10, 2);
 
-		add_filter( 'timber/user/classmap', function( $class, \WP_User $user ) {
+		add_filter( 'timber/user/classmap', function( $class, WP_User $user ) {
     		return CoAuthorsPlusUser::class;
 		}, 10, 2 );
 	}

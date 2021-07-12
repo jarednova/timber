@@ -36,5 +36,21 @@ if ( !function_exists('is_post_type_viewable') ) {
  	}
 }
 
+/**
+ * This constant is always defined by WPML.
+ */
+define('ICL_LANGUAGE_CODE', 'en');
+
+/**
+ * Mocked function for testing menus in WPML
+ */
+function wpml_object_id_filter( $element_id, $element_type = 'post', $return_original_if_missing = false, $language_code = null ) {
+	$locations = get_nav_menu_locations();
+	if (isset($locations['extra-menu'])) {
+		return $locations['extra-menu'];
+	}
+	return $element_id;
+}
+
 // Make sure translations are installed.
 Timber_UnitTestCase::install_translation( 'de_DE' );

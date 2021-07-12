@@ -430,20 +430,6 @@ class TestTimberMenu extends Timber_UnitTestCase {
 		$this->assertTrue( $item->is_external() );
 	}
 
-	function testWPMLMenu() {
-		self::setPermalinkStructure();
-		self::_createTestMenu();
-		$menu = Timber::get_menu();
-		$nav_menu = wp_nav_menu( array( 'echo' => false ) );
-		$this->assertGreaterThanOrEqual( 3, count( $menu->get_items() ) );
-		$items = $menu->get_items();
-		$item = $items[0];
-		$this->assertEquals( 'home', $item->slug() );
-		$this->assertFalse( $item->is_external() );
-		$this->assertEquals( 'http://example.org/home/', $item->link() );
-		$this->assertEquals( '/home/', $item->path() );
-	}
-
 	function testMenuOptionsInNavMenuCssClassFilter() {
 		$term    = self::_createTestMenu();
 		$menu_id = $term['term_id'];

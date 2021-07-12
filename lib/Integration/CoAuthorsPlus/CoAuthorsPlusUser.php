@@ -1,17 +1,18 @@
 <?php
 
-namespace Timber\Integrations;
+namespace Timber\Integration\CoAuthorsPlus;
 
 use Timber\Timber;
+use Timber\User;
 
-class CoAuthorsPlusUser extends \Timber\User {
+class CoAuthorsPlusUser extends User {
 	/**
 	 * This user's avatar thumbnail
 	 *
 	 * @var string
 	 */
 	protected $thumbnail;
-	
+
 	public static function from_guest_author( \stdclass $coauthor ) {
 		$user = new static();
 		$user->init($coauthor);
@@ -45,7 +46,11 @@ class CoAuthorsPlusUser extends \Timber\User {
 	 * @return string
 	 */
 	public function avatar( $args = null ) {
-		if ( CoAuthorsPlus::$prefer_gravatar ) {
+		$prefer_gravatar = apply_filters(
+			'timber/co_authors_plus/prefer_gravatar',
+			false
+		);
+		if ( $prefer_gravatar ) {
 			return get_avatar_url( $this->user_email, $args );
 		} else {
 			// 96 is the default wordpress avatar size

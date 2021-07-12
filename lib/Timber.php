@@ -10,6 +10,7 @@ use Timber\Factory\MenuFactory;
 use Timber\Factory\PostFactory;
 use Timber\Factory\TermFactory;
 use Timber\Factory\UserFactory;
+use Timber\Integration;
 use Timber\Helper;
 use Timber\PostCollectionInterface;
 use Timber\URLHelper;
@@ -120,7 +121,28 @@ class Timber {
 			Twig::init();
 			ImageHelper::init();
 			Admin::init();
-			new Integrations();
+
+			add_action('init', function() {
+				$integrations = [
+					Integration\AcfIntegration::class,
+					Integration\CoAuthorsPlusIntegration::class,
+					Integration\WpmlIntegration::class,
+				];
+
+				/**
+				 * Filters the integrations that should be initialized by Timber.
+				 *
+				 * @since 2.0.0
+				 *
+				 * @param array $integrations An array of PHP class names. Default: array of
+				 *                            integrations that Timber initializes by default.
+				 */
+				$integrations = apply_filters( 'timber/integrations', $integrations );
+
+				foreach ($integrations as $integration) {
+					self::init_integration(new $integration());
+				}
+			});
 
 			// @todo find a more permanent home for this stuff, maybe in a QueryHelper class?
 			add_filter('pre_get_posts', function(WP_Query $query) {
@@ -170,6 +192,19 @@ class Timber {
 			class_alias( 'Timber\Timber', 'Timber' );
 
 			define('TIMBER_LOADED', true);
+		}
+	}
+
+	/**
+	 * Initialize a single IntegrationInterface instance.
+	 *
+	 * @internal
+	 */
+	protected static function init_integration(
+		Integration\IntegrationInterface $integration
+	) : void {
+		if ($integration->should_init()) {
+			$integration->init();
 		}
 	}
 
@@ -619,7 +654,7 @@ class Timber {
 	 * ```
 	 */
 	public static function get_term( $term = null ) {
-		
+
 		if (null === $term) {
 			// get the fallback term_id from the current query
 			global $wp_query;
@@ -663,7 +698,7 @@ class Timber {
 	 * @param string     $field    The name of the field to retrieve the term with. One of: `id`,
 	 *                             `ID`, `slug`, `name` or `term_taxonomy_id`.
 	 * @param int|string $value    The value to search for by `$field`.
-	 * @param string     $taxonomy The taxonomy you want to retrieve from. Empty string will search 
+	 * @param string     $taxonomy The taxonomy you want to retrieve from. Empty string will search
 	 *                             from all.
 	 *
 	 * @return \Timber\Term|null

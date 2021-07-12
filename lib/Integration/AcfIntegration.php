@@ -5,16 +5,21 @@
  * @package Timber
  */
 
-namespace Timber\Integrations;
+namespace Timber\Integration;
+
+use ACF;
 
 use Timber\Helper;
 
 /**
  * Class used to handle integration with Advanced Custom Fields
  */
-class ACF {
-	
-	public function __construct() {
+class AcfIntegration implements IntegrationInterface {
+	public function should_init() : bool {
+		return class_exists( ACF::class );
+	}
+
+	public function init() : void {
 		add_filter('timber/post/pre_meta', array( __CLASS__, 'post_get_meta_field' ), 10, 5);
 		add_filter('timber/post/meta_object_field', array( __CLASS__, 'post_meta_object' ), 10, 3);
 		add_filter('timber/term/pre_meta', array( __CLASS__, 'term_get_meta_field' ), 10, 5);
@@ -25,7 +30,7 @@ class ACF {
 		 *
 		 * @deprecated 2.0.0 with no replacement
 		 */
-		add_filter('timber/term/meta/set', array( $this, 'term_set_meta' ), 10, 4);
+		add_filter('timber/term/meta/set', array( __CLASS__, 'term_set_meta' ), 10, 4);
 	}
 
 	/**
@@ -77,7 +82,7 @@ class ACF {
 	 *
 	 * @return mixed
 	 */
-	public function term_set_meta( $value, $field, $term_id, $term ) {
+	public static function term_set_meta( $value, $field, $term_id, $term ) {
 		$searcher = $term->taxonomy . '_' . $term->ID;
 		update_field($field, $value, $searcher);
 		return $value;

@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @group integrations
+ */
 class TestTimberURLHelper extends Timber_UnitTestCase {
 
 	private $mockUploadDir = false;
